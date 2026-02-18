@@ -82,7 +82,7 @@ export function AuthButton() {
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Welcome to LensLock</DialogTitle>
+            <DialogTitle>Welcome to Lens</DialogTitle>
             <DialogDescription>
               Sign in to participate in daily challenges and vote for your favorite photos. This is a mock sign-in for demonstration.
             </DialogDescription>

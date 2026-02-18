@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
-  title: 'LensLock - Daily Photo Challenge',
+  title: 'Lens - Daily Photo Challenge',
   description: 'Join daily photo challenges, vote on submissions, and climb the leaderboard.',
 };
 
