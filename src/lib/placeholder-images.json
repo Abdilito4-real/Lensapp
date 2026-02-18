@@ -89,6 +89,30 @@
       "description": "Winning photo of a cat's eyes",
       "imageUrl": "https://images.unsplash.com/photo-1574923842719-94d5f9e28793?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjYXQlMjBleWVzfGVufDB8fHx8MTc3MTQ1MDEyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "cat eyes"
+    },
+    {
+      "id": "gallery-1",
+      "description": "Woman in yellow shirt",
+      "imageUrl": "https://www.format.com/wp-content/uploads/woman-in-yellow-shirt-and-orange-makeup-posing-between-spiky-leaves-683x1024.jpg.webp",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "gallery-2",
+      "description": "Fashionable man",
+      "imageUrl": "https://i.pinimg.com/236x/bf/c7/7f/bfc77f6b02cda6b731b58835e1794251.jpg",
+      "imageHint": "man fashion"
+    },
+    {
+      "id": "gallery-3",
+      "description": "Man with skateboard",
+      "imageUrl": "https://img.freepik.com/free-photo/man-with-skateboard-blue-jacket_23-2148264218.jpg?w=740",
+      "imageHint": "man skateboard"
+    },
+    {
+      "id": "gallery-4",
+      "description": "Students studying outdoors",
+      "imageUrl": "https://images.stockcake.com/public/2/0/4/20406b38-ae9c-4d6f-bc9f-ba54d5a0d1b0_large/students-studying-outdoors-stockcake.jpg",
+      "imageHint": "students outdoors"
     }
   ]
 }
