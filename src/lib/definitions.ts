@@ -7,6 +7,8 @@ export type User = {
   streak: number;
   totalUpvotes: number;
   wins: string[]; // submission IDs
+  friends: string[]; // array of user IDs
+  friendRequests: string[]; // array of user IDs
 };
 
 export type Challenge = {

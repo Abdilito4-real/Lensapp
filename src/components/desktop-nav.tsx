@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Vote, PlusSquare, Trophy, User } from 'lucide-react';
+import { Home, PlusSquare, Trophy, User, Users } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import {
   Tooltip,
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/vote', label: 'Vote', icon: Vote },
+  { href: '/friends', label: 'Friends', icon: Users, requiresAuth: true },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];

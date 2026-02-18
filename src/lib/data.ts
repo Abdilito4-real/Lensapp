@@ -2,11 +2,11 @@ import type { User, Challenge, Submission, Badge } from '@/lib/definitions';
 import { Flame, Star, Award, Zap, Trophy } from 'lucide-react';
 
 export const users: User[] = [
-  { id: 'user-1', name: 'Alex', avatarId: 'user-avatar-1', streak: 12, totalUpvotes: 124, wins: ['submission-1', 'win-1'] },
-  { id: 'user-2', name: 'Bri', avatarId: 'user-avatar-2', streak: 8, totalUpvotes: 89, wins: ['win-2'] },
-  { id: 'user-3', name: 'Casey', avatarId: 'user-avatar-3', streak: 25, totalUpvotes: 345, wins: ['win-3', 'submission-3'] },
-  { id: 'user-4', name: 'Drew', avatarId: 'user-avatar-4', streak: 2, totalUpvotes: 15, wins: [] },
-  { id: 'user-5', name: 'Eli', avatarId: 'user-avatar-5', streak: 18, totalUpvotes: 210, wins: ['submission-5'] },
+  { id: 'user-1', name: 'Alex', avatarId: 'user-avatar-1', streak: 12, totalUpvotes: 124, wins: ['submission-1', 'win-1'], friends: ['user-2', 'user-5'], friendRequests: ['user-4'] },
+  { id: 'user-2', name: 'Bri', avatarId: 'user-avatar-2', streak: 8, totalUpvotes: 89, wins: ['win-2'], friends: ['user-1'], friendRequests: [] },
+  { id: 'user-3', name: 'Casey', avatarId: 'user-avatar-3', streak: 25, totalUpvotes: 345, wins: ['win-3', 'submission-3'], friends: [], friendRequests: [] },
+  { id: 'user-4', name: 'Drew', avatarId: 'user-avatar-4', streak: 2, totalUpvotes: 15, wins: [], friends: [], friendRequests: [] },
+  { id: 'user-5', name: 'Eli', avatarId: 'user-avatar-5', streak: 18, totalUpvotes: 210, wins: ['submission-5'], friends: ['user-1'], friendRequests: [] },
 ];
 
 const today = new Date();

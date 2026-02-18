@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Vote, PlusSquare, Trophy, User } from 'lucide-react';
+import { Home, Vote, PlusSquare, Trophy, User, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/vote', label: 'Vote', icon: Vote },
+  { href: '/friends', label: 'Friends', icon: Users, requiresAuth: true },
   { href: '/submit', label: 'Submit', icon: PlusSquare, className: "text-primary-foreground bg-primary rounded-lg p-3 h-auto w-auto shadow-lg hover:bg-primary/90" },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/profile', label: 'Profile', icon: User, requiresAuth: true },
