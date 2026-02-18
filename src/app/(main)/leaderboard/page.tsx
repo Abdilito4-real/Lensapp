@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
 import { users, submissions } from '@/lib/data';
@@ -41,7 +41,7 @@ export default function LeaderboardPage() {
                                             <span className="font-medium">{user.name}</span>
                                         </div>
                                         <Badge variant="secondary" className="gap-1.5 pl-2">
-                                            <Flame className="h-4 w-4 text-orange-500" />
+                                            <Flame className="h-4 w-4 text-accent" />
                                             {user.streak} days
                                         </Badge>
                                     </CardContent>
@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
                                                 <span className="text-sm font-medium">{user?.name || 'Anonymous'}</span>
                                             </div>
                                             <Badge variant="outline" className="gap-1.5">
-                                                <Heart className="h-3.5 w-3.5 text-red-500 fill-current" />
+                                                <Heart className="h-3.5 w-3.5 text-accent fill-current" />
                                                 {submission.upvotes}
                                             </Badge>
                                         </div>
