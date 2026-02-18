@@ -10,7 +10,7 @@ const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/vote', label: 'Vote', icon: Vote },
   { href: '/submit', label: 'Submit', icon: PlusSquare, className: "text-primary-foreground bg-primary rounded-lg p-3 h-auto w-auto shadow-lg hover:bg-primary/90" },
-  { href: '/leaderboard', label: 'Leaders', icon: Trophy },
+  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];
 
