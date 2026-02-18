@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent } from 'react';
-import { useFormState } from 'react-dom';
+import { useState, useRef, type ChangeEvent, useActionState, useEffect } from 'react';
 import { moderatePhoto } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,6 +12,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type Stage = 'select' | 'preview' | 'moderating' | 'result';
 
+type ModerationState = {
+  alignsWithTopic?: boolean;
+  reason?: string;
+  error?: string;
+};
+
 export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [stage, setStage] = useState<Stage>('select');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -20,9 +25,15 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
-  const [moderationState, formAction] = useFormState(moderatePhoto, {});
+  const [moderationState, formAction] = useActionState<ModerationState, FormData>(moderatePhoto, {});
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (stage === 'moderating') {
+      setStage('result');
+    }
+  }, [moderationState, stage]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -82,14 +93,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }
   };
 
-  const handleFormSubmit = async (formData: FormData) => {
+  const handleFormSubmit = (formData: FormData) => {
     setStage('moderating');
     formData.set('topic', challengeTopic);
     if(imageFile) {
       formData.set('photo', imageFile);
     }
-    await formAction(formData);
-    setStage('result');
+    formAction(formData);
   };
 
   const resetFlow = () => {
