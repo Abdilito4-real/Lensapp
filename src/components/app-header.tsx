@@ -8,7 +8,7 @@ export function AppHeader() {
       <div className="container flex h-20 items-center justify-between">
         <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3">
-                <Image src="/logo.png" alt="Lens logo" width={48} height={48} />
+                <Image src="/logo.png" alt="Lens logo" width={48} height={48} className="w-12 h-auto" />
                 <span className="font-bold text-xl">Lens</span>
             </Link>
         </div>

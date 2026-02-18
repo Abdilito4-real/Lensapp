@@ -173,7 +173,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         {(isPreviewing || isModerating) && imagePreview && (
           <form action={handleFormSubmit} className="space-y-4">
             <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-              <Image src={imagePreview} alt="Submission preview" layout="fill" objectFit="cover" />
+              <Image src={imagePreview} alt="Submission preview" fill className="object-cover" />
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={resetFlow} disabled={isModerating} className="w-full">
@@ -195,7 +195,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         {stage === 'result' && (
           <div className="space-y-4">
              {imagePreview && <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-              <Image src={imagePreview} alt="Submission preview" layout="fill" objectFit="cover" />
+              <Image src={imagePreview} alt="Submission preview" fill className="object-cover" />
             </div>}
             {moderationState.error && (
                  <Alert variant="destructive">
