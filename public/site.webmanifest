@@ -2,10 +2,6 @@
   "name": "Lens - Daily Photo Challenge",
   "short_name": "Lens",
   "description": "Join daily photo challenges, vote on submissions, and climb the leaderboard.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#FEF9F2",
-  "theme_color": "#B5C18E",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -17,5 +13,9 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "theme_color": "#FEF9F2",
+  "background_color": "#FEF9F2",
+  "display": "standalone",
+  "start_url": "/"
 }
