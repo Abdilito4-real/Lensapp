@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent, useActionState, useEffect } from 'react';
+import { useState, useRef, type ChangeEvent, useEffect } from 'react';
 import { moderatePhoto } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Upload, Camera, CheckCircle, XCircle, Loader2, ArrowLeft, Send } from 'lucide-react';
+import { Upload, Camera, CheckCircle, XCircle, ArrowLeft, Send } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useActionState } from 'react';
+import { LensLoader } from './lens-loader';
 
-type Stage = 'select' | 'preview' | 'moderating' | 'result';
+type Stage = 'select' | 'preview' | 'result';
 
 type ModerationState = {
   alignsWithTopic?: boolean;
@@ -25,15 +27,19 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
-  const [moderationState, formAction] = useActionState<ModerationState, FormData>(moderatePhoto, {});
+  const [moderationState, formAction, isModerating] = useActionState<ModerationState, FormData>(moderatePhoto, {});
   const { toast } = useToast();
   const router = useRouter();
+  
+  const wasModerating = useRef(false);
 
   useEffect(() => {
-    if (stage === 'moderating') {
-      setStage('result');
-    }
-  }, [moderationState, stage]);
+      if (wasModerating.current && !isModerating) {
+          setStage('result');
+      }
+      wasModerating.current = isModerating;
+  }, [isModerating]);
+
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -94,7 +100,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
 
   const handleFormSubmit = (formData: FormData) => {
-    setStage('moderating');
     formData.set('topic', challengeTopic);
     if(imageFile) {
       formData.set('photo', imageFile);
@@ -116,23 +121,25 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     router.push('/');
   }
 
+  const isPreviewing = stage === 'preview' && imagePreview;
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Submit to "{challengeTopic}"</CardTitle>
         <CardDescription>
-          {
-            {
-              select: 'Choose a photo from your library or use your camera.',
-              preview: 'Review your photo before submitting for analysis.',
-              moderating: 'Our AI is analyzing your photo...',
-              result: 'Here is the result of the AI analysis.'
-            }[stage]
+          { isModerating
+              ? 'Our AI is analyzing your photo...'
+              : {
+                select: 'Choose a photo from your library or use your camera.',
+                preview: 'Review your photo before submitting for analysis.',
+                result: 'Here is the result of the AI analysis.'
+              }[stage]
           }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {stage === 'select' && (
+        {stage === 'select' && !isModerating && (
           <div className="space-y-4">
             {isCameraOn ? (
               <div className='flex flex-col items-center gap-4'>
@@ -163,19 +170,19 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
           </div>
         )}
 
-        {(stage === 'preview' || stage === 'moderating') && imagePreview && (
+        {(isPreviewing || isModerating) && imagePreview && (
           <form action={handleFormSubmit} className="space-y-4">
             <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
               <Image src={imagePreview} alt="Submission preview" layout="fill" objectFit="cover" />
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={resetFlow} disabled={stage === 'moderating'} className="w-full">
+              <Button type="button" variant="outline" onClick={resetFlow} disabled={isModerating} className="w-full">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
-              <Button type="submit" disabled={stage === 'moderating'} className="w-full">
-                {stage === 'moderating' ? (
+              <Button type="submit" disabled={isModerating} className="w-full">
+                {isModerating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...
+                    <LensLoader className="mr-2" /> Analyzing...
                   </>
                 ) : (
                   'Analyze Photo'
