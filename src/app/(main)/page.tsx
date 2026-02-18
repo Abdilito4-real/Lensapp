@@ -19,7 +19,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col items-center justify-center text-center space-y-8">
-      <div className="space-y-2 pt-0 md:pt-12">
+      <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
           Today's Challenge
         </h1>
@@ -28,7 +28,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="relative w-full max-w-5xl flex justify-center items-center py-10 md:py-20">
+      <div className="relative w-full max-w-5xl flex justify-center items-center py-6 md:py-10">
         
         {/* Left Images */}
         {galleryImages[0] && (

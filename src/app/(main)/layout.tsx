@@ -9,7 +9,7 @@ export default function MainLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
-      <main className="flex-1 container py-6 md:py-10">
+      <main className="flex-1 container py-8 md:py-12">
         <div className="pb-16 md:pb-0">
           {children}
         </div>

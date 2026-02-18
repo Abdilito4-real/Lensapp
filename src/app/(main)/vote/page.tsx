@@ -16,7 +16,7 @@ export default function VotePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">Vote on Submissions</h1>
         <p className="max-w-md mx-auto text-muted-foreground md:text-lg">
