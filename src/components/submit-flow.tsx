@@ -18,6 +18,7 @@ import {
   Redo,
   X,
   RotateCcw,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -32,14 +33,24 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { ImageCropper } from './image-cropper';
+import Draggable from 'react-draggable';
 
 type Stage = 'select' | 'preview';
+
+type TextElement = {
+  id: number;
+  content: string;
+  position: { x: number; y: number };
+  color: string;
+};
 
 const initialFilters = {
   brightness: 100,
   contrast: 100,
   saturate: 100,
 };
+
+const textColors = [ '#FFFFFF', '#000000', '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899' ];
 
 export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [stage, setStage] = useState<Stage>('select');
@@ -59,8 +70,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [isMusicSearchOpen, setIsMusicSearchOpen] = useState(false);
 
   const [filters, setFilters] = useState(initialFilters);
+  const [editPanel, setEditPanel] = useState<'filters' | 'text' | null>(null);
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
+
+  const [texts, setTexts] = useState<TextElement[]>([]);
+  const [activeTextId, setActiveTextId] = useState<number | null>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -119,7 +135,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       }
     }
   };
-
+  
   const resetFlow = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -134,12 +150,66 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setImageFile(null);
     setSelectedSong(null);
     setFilters(initialFilters);
+    setTexts([]);
+    setActiveTextId(null);
     setStage('select');
     stopCamera();
     setIsCropping(false);
   };
+  
+  const handleFinalSubmission = async () => {
+    if (!imagePreview || !imageContainerRef.current) {
+        toast({ title: 'Error', description: 'No image to submit.', variant: 'destructive' });
+        return;
+    }
 
-  const handleFinalSubmission = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        toast({ title: 'Error', description: 'Could not process image.', variant: 'destructive' });
+        return;
+    }
+
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.src = imagePreview;
+
+    await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+    });
+
+    const { naturalWidth, naturalHeight } = image;
+    const { width: previewWidth, height: previewHeight } = imageContainerRef.current.getBoundingClientRect();
+    
+    const scaleX = naturalWidth / previewWidth;
+    const scaleY = naturalHeight / previewHeight;
+
+    canvas.width = naturalWidth;
+    canvas.height = naturalHeight;
+
+    ctx.filter = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%)`;
+    ctx.drawImage(image, 0, 0);
+    ctx.filter = 'none';
+
+    texts.forEach(text => {
+        const fontSize = 32 * Math.min(scaleX, scaleY);
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.fillStyle = text.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        ctx.shadowColor = 'rgba(0,0,0,0.7)';
+        ctx.shadowOffsetX = 2 * Math.min(scaleX, scaleY);
+        ctx.shadowOffsetY = 2 * Math.min(scaleX, scaleY);
+        ctx.shadowBlur = 4 * Math.min(scaleX, scaleY);
+        
+        const textX = (text.position.x + previewWidth / 2) * scaleX;
+        const textY = (text.position.y + previewHeight / 2) * scaleY;
+        
+        ctx.fillText(text.content, textX, textY);
+    });
+
     toast({
       title: 'Submission Successful!',
       description: selectedSong
@@ -198,9 +268,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsMusicSearchOpen(false);
   }
   
-  const handleResetFilters = () => {
-    setFilters(initialFilters);
-  };
+  const handleResetFilters = () => setFilters(initialFilters);
   
   const handleCropComplete = async (croppedImageSrc: string) => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
@@ -228,6 +296,45 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsCropping(false);
 };
 
+  const handleAddText = () => {
+    const newId = Date.now();
+    setTexts(texts => [
+      ...texts,
+      {
+        id: newId,
+        content: 'Your Text',
+        position: { x: 0, y: 0 },
+        color: '#FFFFFF',
+      },
+    ]);
+    setActiveTextId(newId);
+    setEditPanel('text');
+    setIsEditPopoverOpen(true);
+  };
+
+  const handleTextUpdate = (id: number, newContent: string) => {
+    setTexts(texts.map(t => (t.id === id ? { ...t, content: newContent } : t)));
+  };
+
+  const handleDragStop = (id: number, data: { x: number; y: number }) => {
+    setTexts(texts.map(t => (t.id === id ? { ...t, position: { ...data } } : t)));
+    setActiveTextId(id);
+    setEditPanel('text');
+    setIsEditPopoverOpen(true);
+  };
+  
+  const handleTextColorChange = (color: string) => {
+    if (!activeTextId) return;
+    setTexts(texts.map(t => t.id === activeTextId ? { ...t, color } : t));
+  };
+  
+  const handleDeleteText = () => {
+    if (!activeTextId) return;
+    setTexts(texts.filter(t => t.id !== activeTextId));
+    setActiveTextId(null);
+    setIsEditPopoverOpen(false);
+  };
+
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
@@ -243,6 +350,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         audioRef.current.pause();
     }
   }, [selectedSong]);
+
+  const activeText = texts.find(t => t.id === activeTextId);
 
   if (stage === 'preview' && imagePreview) {
     return (
@@ -262,11 +371,31 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               
               <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-auto p-2">
+                    <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => { setEditPanel('filters'); setActiveTextId(null); }}>
                         <SlidersHorizontal className="h-5 w-5" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
+                  {editPanel === 'text' && activeText ? (
+                    <div className="grid gap-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium leading-none">Edit Text</h4>
+                        <Button variant="ghost" size="icon" onClick={handleDeleteText} className="text-destructive h-8 w-8">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {textColors.map(color => (
+                          <button 
+                            key={color}
+                            onClick={() => handleTextColorChange(color)}
+                            className="w-6 h-6 rounded-full border-2"
+                            style={{ backgroundColor: color, borderColor: activeText.color === color ? 'hsl(var(--primary))' : 'transparent' }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
                     <div className="grid gap-4">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
@@ -319,16 +448,17 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                             </div>
                         </div>
                     </div>
+                  )}
                 </PopoverContent>
               </Popover>
               
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Text feature coming soon!"})}><Type className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleAddText}><Type className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Emoji feature coming soon!"})}><Smile className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Undo feature coming soon!"})}><Undo className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Redo feature coming soon!"})}><Redo className="h-5 w-5" /></Button>
           </div>
 
-          <div className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4">
+          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => setActiveTextId(null)}>
               <Image 
                 src={imagePreview} 
                 alt="Submission preview" 
@@ -340,6 +470,28 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 }}
               />
               
+              {texts.map((text) => (
+                <Draggable
+                  key={text.id}
+                  position={text.position}
+                  onStop={(_, data) => handleDragStop(text.id, data)}
+                  bounds="parent"
+                >
+                  <div className="absolute cursor-move p-2" onDoubleClick={(e) => { e.stopPropagation(); setActiveTextId(text.id); setEditPanel('text'); setIsEditPopoverOpen(true); }}>
+                    <Textarea
+                      value={text.content}
+                      onChange={(e) => handleTextUpdate(text.id, e.target.value)}
+                      className="bg-transparent border-none focus-visible:ring-2 focus-visible:ring-primary resize-none text-center text-2xl font-bold p-0"
+                      style={{ 
+                        color: text.color,
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+                      }}
+                      rows={1}
+                    />
+                  </div>
+                </Draggable>
+              ))}
+
               <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
                 {selectedSong && (
                     <Card className="p-3 flex items-center justify-between bg-black/50 border-white/20 text-white">
@@ -461,5 +613,3 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     </Card>
   );
 }
-
-    
