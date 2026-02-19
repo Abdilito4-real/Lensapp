@@ -2,7 +2,6 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/context/auth-context';
-import { PwaInstaller } from '@/components/pwa-installer';
 
 export const metadata: Metadata = {
   title: 'Lens - Daily Photo Challenge',
@@ -30,7 +29,6 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
-          <PwaInstaller />
         </AuthProvider>
       </body>
     </html>

@@ -26,6 +26,7 @@ export function MusicSearch({
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSongLoading, setIsSongLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(true); // Default to open in dialog
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -100,50 +101,38 @@ export function MusicSearch({
 
     stopPreview(); // Stop any other preview
     setPreviewingSongId(song.id); // Show loading/playing state
+    setIsSongLoading(true);
 
     try {
-      const audioUrl = await getAudioUrl(song.title, song.artist);
-      
+      const audioUrl = await getAudioUrl(song.title, song.artists[0]?.name ?? '');
+
       const sound = new Howl({
         src: [audioUrl],
         format: ['mp3'],
         html5: true,
-        volume: 0.5,
-        onplay: () => {
-            // Stop after 7 seconds
-            setTimeout(() => sound.stop(), 7000);
-        },
+        onload: () => setIsSongLoading(false),
         onstop: () => {
-           if (previewAudioRef.current === sound) {
-              stopPreview();
-            }
-        },
-        onend: () => {
-            if (previewAudioRef.current === sound) {
-              stopPreview();
-            }
-        },
-        onplayerror: (id, error) => {
-          console.error('Howl play error:', error);
-          toast({ variant: 'destructive', title: 'Could not play preview.' });
           if (previewAudioRef.current === sound) {
-            stopPreview();
+            setPreviewingSongId(null);
           }
         },
-        onloaderror: (id, error) => {
-            console.error('Howl load error:', error, '| URL:', audioUrl);
-            toast({ variant: 'destructive', title: 'Failed to load song.'});
-            if (previewAudioRef.current === sound) {
-                stopPreview();
-            }
-        }
+        onend: () => {
+          if (previewAudioRef.current === sound) {
+            setPreviewingSongId(null);
+          }
+        },
+        onloaderror: () => {
+          toast({ variant: 'destructive', title: 'Failed to load song.' });
+          setPreviewingSongId(null);
+          setIsSongLoading(false);
+        },
       });
       previewAudioRef.current = sound;
       sound.play();
-    } catch (error) {
-      console.error('Preview failed:', error);
+    } catch {
       toast({ variant: 'destructive', title: 'No preview available for this track.' });
-      stopPreview();
+      setPreviewingSongId(null);
+      setIsSongLoading(false);
     }
   };
 

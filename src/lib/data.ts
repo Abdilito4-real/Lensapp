@@ -34,6 +34,7 @@ export const submissions: Submission[] = [
       videoId: '_zB3R32rk3U',
       title: 'Paint The Town Red',
       artist: 'Doja Cat',
+      artists: [{ name: 'Doja Cat' }],
       album: 'Scarlet',
       thumbnail: 'https://p2.music.126.net/wns4gS-nJXx_e80bKx-Q8A==/109951168341822557.jpg?param=300x300',
       startTime: 30,

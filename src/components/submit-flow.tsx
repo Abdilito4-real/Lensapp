@@ -435,7 +435,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setSelectedSong(song);
     setIsSongLoading(true);
 
-    getAudioUrl(song.title, song.artist).then((audioUrl) => {
+    getAudioUrl(song.title, song.artists[0]?.name ?? '').then((audioUrl) => {
       if (!isMountedRef.current) return;
 
       const sound = new Howl({
