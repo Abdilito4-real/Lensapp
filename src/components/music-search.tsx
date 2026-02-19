@@ -11,7 +11,6 @@ import Image from 'next/image';
 import { Search, Music, Play } from 'lucide-react';
 import { LensLoader } from './lens-loader';
 import { useToast } from '@/hooks/use-toast';
-import { AudioTrimmer } from './audio-trimmer';
 
 interface MusicSearchProps {
   onSelectSong: (song: Song | null) => void;
@@ -29,9 +28,6 @@ export function MusicSearch({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  const [showTrimmer, setShowTrimmer] = useState(false);
-  const [songToTrim, setSongToTrim] = useState<Song | null>(null);
 
   const searchSongs = useCallback(
     debounce(async (searchQuery: string) => {
@@ -82,23 +78,20 @@ export function MusicSearch({
     };
   }, [query, searchSongs, fetchSuggestions]);
 
-  const handleOpenTrimmer = (song: Song) => {
-    setSongToTrim(song);
-    setShowTrimmer(true);
-    setIsOpen(false);
-  };
-  
-  const handleSegmentSelected = (startTime: number, endTime: number) => {
-    if (songToTrim) {
-      onSelectSong({
-        ...songToTrim,
-        startTime,
-        endTime,
-        duration: endTime - startTime
-      });
+  const handleSelectSong = (song: Song) => {
+    const startTime = 0;
+    let endTime = 20;
+
+    if (song.duration && song.duration > 0) {
+      endTime = Math.min(song.duration, 20);
     }
-    setSongToTrim(null);
-    setShowTrimmer(false);
+    
+    onSelectSong({
+      ...song,
+      startTime,
+      endTime,
+      duration: endTime - startTime,
+    });
   };
 
   const handlePlayPreview = async (e: React.MouseEvent, song: Song) => {
@@ -147,7 +140,7 @@ export function MusicSearch({
               results.map((song) => (
                 <button
                   key={song.id}
-                  onClick={() => handleOpenTrimmer(song)}
+                  onClick={() => handleSelectSong(song)}
                   className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors border-b last:border-b-0 text-left"
                 >
                   {song.thumbnail ? (
@@ -205,18 +198,6 @@ export function MusicSearch({
           </Card>
         )}
       </div>
-
-      {showTrimmer && songToTrim && (
-        <AudioTrimmer
-          songId={songToTrim.videoId!}
-          songTitle={songToTrim.title}
-          onSelectSegment={handleSegmentSelected}
-          onClose={() => {
-            setShowTrimmer(false);
-            setSongToTrim(null);
-          }}
-        />
-      )}
     </>
   );
 }

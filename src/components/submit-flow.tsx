@@ -35,6 +35,7 @@ import { Label } from '@/components/ui/label';
 import { ImageCropper } from './image-cropper';
 import Draggable from 'react-draggable';
 import { Input } from '@/components/ui/input';
+import { AudioTrimmer } from './audio-trimmer';
 
 type Stage = 'select' | 'preview';
 
@@ -169,6 +170,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [editPanel, setEditPanel] = useState<'filters' | 'text' | 'emoji' | null>(null);
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
+  const [showTrimmer, setShowTrimmer] = useState(false);
 
   const [texts, setTexts] = useState<TextElement[]>([]);
   const [emojis, setEmojis] = useState<EmojiElement[]>([]);
@@ -464,6 +466,18 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       };
       setupAndPlayAudio();
     }
+  };
+
+  const handleSegmentSelected = (startTime: number, endTime: number) => {
+    if (selectedSong) {
+      handleSongSelected({
+        ...selectedSong,
+        startTime,
+        endTime,
+        duration: endTime - startTime,
+      });
+    }
+    setShowTrimmer(false);
   };
   
   const handleRemoveSong = () => {
@@ -877,6 +891,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                onClick={() => setShowTrimmer(true)}
+                                className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
+                            >
+                                <SlidersHorizontal className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={togglePlayback}
                                 className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
                             >
@@ -926,6 +948,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 imageSrc={imagePreview}
                 onClose={() => setIsCropping(false)}
                 onCropComplete={handleCropComplete}
+            />
+        )}
+        {showTrimmer && selectedSong && (
+            <AudioTrimmer
+              songId={selectedSong.videoId!}
+              songTitle={selectedSong.title}
+              onSelectSegment={handleSegmentSelected}
+              onClose={() => setShowTrimmer(false)}
             />
         )}
       </>
