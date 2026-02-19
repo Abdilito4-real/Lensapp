@@ -5,6 +5,7 @@ export interface Song {
   videoId?: string;
   title: string;
   artist: string;
+  artists: { name: string }[];
   album?: string;
   thumbnail?: string;
   duration?: number;
@@ -57,6 +58,7 @@ class MusicService {
         videoId: item.videoId,
         title: item.title,
         artist: item.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+        artists: item.artists || [],
         album: item.album?.name,
         thumbnail: item.thumbnails?.[0]?.url,
         duration: item.duration ?? extractDuration(item.subtitle),
@@ -80,6 +82,7 @@ class MusicService {
         videoId,
         title: data.title,
         artist: data.artists?.[0]?.name || 'Unknown',
+        artists: data.artists || [],
         album: data.album?.name,
         thumbnail: data.thumbnail?.url,
         duration: data.duration
