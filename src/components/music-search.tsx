@@ -8,47 +8,30 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
-import { Search, X, Play, Music, Pause } from 'lucide-react';
+import { Search, Music, Play } from 'lucide-react';
 import { LensLoader } from './lens-loader';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AudioTrimmer } from './audio-trimmer';
 
 interface MusicSearchProps {
   onSelectSong: (song: Song | null) => void;
-  selectedSong?: Song | null;
   className?: string;
-  isPlaying?: boolean;
-  onTogglePlay?: () => void;
 }
 
 export function MusicSearch({
   onSelectSong,
-  selectedSong,
   className = '',
-  isPlaying,
-  onTogglePlay,
 }: MusicSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Default to open in dialog
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [songToTrim, setSongToTrim] = useState<Song | null>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const searchSongs = useCallback(
     debounce(async (searchQuery: string) => {
@@ -128,6 +111,7 @@ export function MusicSearch({
         const audio = new Audio(streamUrl);
         audio.volume = 0.5;
         audio.play().catch(err => toast({ variant: 'destructive', title: 'Could not play preview.' }));
+        setTimeout(() => audio.pause(), 5000); // Preview for 5 seconds
       } else {
         toast({ variant: 'destructive', title: 'Could not play preview.' });
       }
@@ -139,48 +123,7 @@ export function MusicSearch({
 
   return (
     <>
-      <div className={cn('relative', className)} ref={dropdownRef}>
-        {selectedSong ? (
-          <Card className="p-3 flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              {selectedSong.thumbnail && (
-                <Image
-                  src={selectedSong.thumbnail}
-                  alt={selectedSong.title}
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded object-cover flex-shrink-0"
-                />
-              )}
-              <div className="min-w-0">
-                <p className="font-medium truncate">{selectedSong.title}</p>
-                <p className="text-sm text-muted-foreground truncate">
-                  {selectedSong.artist}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center">
-              {selectedSong.videoId && onTogglePlay && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onTogglePlay}
-                  className="h-8 w-8 flex-shrink-0"
-                >
-                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onSelectSong(null)}
-                className="h-8 w-8 flex-shrink-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        ) : (
+      <div className={className} ref={dropdownRef}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -188,7 +131,7 @@ export function MusicSearch({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsOpen(true)}
-              placeholder="Add a song to your photo..."
+              placeholder="Search for a song..."
               className="w-full pl-10"
             />
             {loading && (
@@ -197,9 +140,9 @@ export function MusicSearch({
               </div>
             )}
           </div>
-        )}
-        {isOpen && query && !selectedSong && (
-          <Card className="absolute z-10 w-full mt-1 shadow-lg max-h-60 overflow-y-auto p-0">
+        
+        {isOpen && query && (
+          <Card className="z-10 w-full mt-2 shadow-lg max-h-60 overflow-y-auto p-0">
             {results.length > 0 ? (
               results.map((song) => (
                 <button
@@ -232,6 +175,7 @@ export function MusicSearch({
                       size="icon"
                       onClick={(e) => handlePlayPreview(e, song)}
                       className="h-8 w-8 flex-shrink-0"
+                      aria-label="Preview song"
                     >
                       <Play className="h-4 w-4" />
                     </Button>

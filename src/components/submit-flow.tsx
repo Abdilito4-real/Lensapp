@@ -6,7 +6,6 @@ import {
   Upload,
   Camera,
   ArrowLeft,
-  Send,
   Play,
   Pause,
   Music,
@@ -16,6 +15,7 @@ import {
   Smile,
   Undo,
   Redo,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ import type { Song } from '@/lib/musicService';
 import { musicService } from '@/lib/musicService';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 type Stage = 'select' | 'preview';
 
@@ -43,6 +44,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [caption, setCaption] = useState('');
+  const [isMusicSearchOpen, setIsMusicSearchOpen] = useState(false);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -131,36 +133,38 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
-      setIsPlaying(false);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     } else {
       try {
-        const streamUrl = await musicService.getStreamUrl(selectedSong.videoId);
-        if (streamUrl) {
-          if (!audioRef.current || audioRef.current.src !== streamUrl) {
-            if (audioRef.current) audioRef.current.pause();
-            audioRef.current = new Audio(streamUrl);
-            audioRef.current.onpause = () => setIsPlaying(false);
-            audioRef.current.onended = () => setIsPlaying(false);
-          }
+        if (!audioRef.current || !audioRef.current.src.includes(selectedSong.videoId)) {
+            const streamUrl = await musicService.getStreamUrl(selectedSong.videoId);
+            if (streamUrl) {
+                if (audioRef.current) audioRef.current.pause();
+                audioRef.current = new Audio(streamUrl);
+                const onEnd = () => {
+                    setIsPlaying(false);
+                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                };
+                audioRef.current.onpause = onEnd;
+                audioRef.current.onended = onEnd;
+            } else {
+                toast({ variant: 'destructive', title: 'Could not play preview.' });
+                return;
+            }
+        }
+        
+        const { startTime = 0, endTime } = selectedSong;
+        audioRef.current.currentTime = startTime;
+        await audioRef.current.play();
+        setIsPlaying(true);
 
-          const { startTime = 0, endTime } = selectedSong;
-          audioRef.current.currentTime = startTime;
-          audioRef.current.play();
-          setIsPlaying(true);
-
-          if (endTime) {
+        if (endTime) {
             const duration = (endTime - startTime) * 1000;
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
-              audioRef.current?.pause();
-              setIsPlaying(false);
+            audioRef.current?.pause();
             }, duration);
-          }
-
-        } else {
-          toast({ variant: 'destructive', title: 'Could not play preview.' });
         }
+
       } catch (error) {
         console.error("Playback failed:", error);
         toast({ variant: 'destructive', title: 'Could not play preview.' });
@@ -168,75 +172,132 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }
   };
 
+  const handleSongSelected = (song: Song | null) => {
+    setSelectedSong(song);
+    setIsMusicSearchOpen(false);
+  }
+  
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSong && audioRef.current) {
+        audioRef.current.pause();
+    }
   }, [selectedSong]);
 
   if (stage === 'preview' && imagePreview) {
     return (
-      <div className="w-full max-w-md mx-auto">
-        <header className="flex items-center justify-between py-2">
-            <Button variant="ghost" size="icon" onClick={resetFlow}>
-                <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-semibold">Edit</h1>
-            <div className="w-10"></div> {/* Spacer */}
-        </header>
+      <>
+        <div className="w-full max-w-md mx-auto">
+          <header className="flex items-center justify-between py-2">
+              <Button variant="ghost" size="icon" onClick={resetFlow}>
+                  <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-lg font-semibold">Edit</h1>
+              <div className="w-10"></div> {/* Spacer */}
+          </header>
 
-        <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2">
-            <Button variant="ghost" size="icon" className="h-auto p-2"><Music className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon" className="h-auto p-2"><Crop className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon" className="h-auto p-2"><SlidersHorizontal className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon" className="h-auto p-2"><Type className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon" className="h-auto p-2"><Smile className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon" className="h-auto p-2"><Undo className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon" className="h-auto p-2"><Redo className="h-5 w-5" /></Button>
+          <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2">
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsMusicSearchOpen(true)}><Music className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2"><Crop className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2"><SlidersHorizontal className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2"><Type className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2"><Smile className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2"><Undo className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2"><Redo className="h-5 w-5" /></Button>
+          </div>
+
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader>
+              <CardTitle>Submit to "{challengeTopic}"</CardTitle>
+              <CardDescription>
+                  Review your photo and add details before submitting.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 !p-0">
+              <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
+                  <Image src={imagePreview} alt="Submission preview" fill className="object-cover" sizes="(max-width: 448px) 100vw, 448px" />
+              </div>
+              <div className="space-y-4 p-4">
+                {selectedSong && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Selected song</label>
+                        <Card className="p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0">
+                            {selectedSong.thumbnail && (
+                                <Image
+                                src={selectedSong.thumbnail}
+                                alt={selectedSong.title}
+                                width={40}
+                                height={40}
+                                className="w-10 h-10 rounded object-cover flex-shrink-0"
+                                />
+                            )}
+                            <div className="min-w-0">
+                                <p className="font-medium truncate">{selectedSong.title}</p>
+                                <p className="text-sm text-muted-foreground truncate">
+                                {selectedSong.artist}
+                                </p>
+                            </div>
+                            </div>
+                            <div className="flex items-center">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={togglePlayback}
+                                    className="h-8 w-8 flex-shrink-0"
+                                >
+                                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSelectedSong(null)}
+                                    className="h-8 w-8 flex-shrink-0"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </Card>
+                    </div>
+                )}
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Add caption (optional)</label>
+                    <Textarea 
+                      placeholder="Add caption..."
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                    />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex gap-2">
+              <Button variant="outline" onClick={resetFlow} className="w-full">
+                 Back
+              </Button>
+              <Button onClick={handleFinalSubmission} className="w-full">
+                  Submit
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
-
-        <Card className="shadow-none border-none bg-transparent">
-          <CardHeader>
-            <CardTitle>Submit to "{challengeTopic}"</CardTitle>
-            <CardDescription>
-                Review your photo and add a song before submitting.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 !p-0">
-            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" sizes="(max-width: 448px) 100vw, 448px" />
-            </div>
-            <div className="space-y-4 p-4">
-              <div className="space-y-2">
-                  <label className="text-sm font-medium">Add a song (optional)</label>
-                  <MusicSearch
-                    onSelectSong={setSelectedSong}
-                    selectedSong={selectedSong}
-                    isPlaying={isPlaying}
-                    onTogglePlay={togglePlayback}
-                  />
-              </div>
-              <div className="space-y-2">
-                  <label className="text-sm font-medium">Add caption (optional)</label>
-                  <Textarea 
-                    placeholder="Add caption..."
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                  />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex gap-2">
-            <Button variant="outline" onClick={resetFlow} className="w-full">
-               Back
-            </Button>
-            <Button onClick={handleFinalSubmission} className="w-full">
-                Submit
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+        <Dialog open={isMusicSearchOpen} onOpenChange={setIsMusicSearchOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Add a song</DialogTitle>
+                    <DialogDescription>
+                        Search for a song and select a segment to add to your photo.
+                    </DialogDescription>
+                </DialogHeader>
+                <MusicSearch onSelectSong={handleSongSelected} />
+            </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
