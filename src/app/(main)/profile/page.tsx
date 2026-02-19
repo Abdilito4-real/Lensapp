@@ -95,8 +95,8 @@ export default function ProfilePage() {
                                 const image = win ? PlaceHolderImages.find(p => p.id === win.imageId) : undefined;
                                 if (!image) return null;
                                 return (
-                                    <div key={win.id} className="rounded-lg overflow-hidden relative group aspect-w-1 aspect-h-1">
-                                        <Image src={image.imageUrl} alt="Winning submission" fill className="object-cover" data-ai-hint={image.imageHint} />
+                                    <div key={win.id} className="rounded-lg overflow-hidden relative group aspect-square">
+                                        <Image src={image.imageUrl} alt="Winning submission" fill sizes="(max-width: 768px) 45vw, (max-width: 1024px) 30vw, 22vw" className="object-cover" data-ai-hint={image.imageHint} />
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
                                             <p className="text-white text-center text-xs">+{win.upvotes} votes</p>
                                         </div>

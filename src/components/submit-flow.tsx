@@ -207,11 +207,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
         {stage === 'preview' && imagePreview && (
           <div className="space-y-4">
-            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" />
-            </div>
-
-            <div className="space-y-2">
+             <div className="space-y-2">
                 <label className="text-sm font-medium">Add a song (optional)</label>
                 <MusicSearch 
                   onSelectSong={setSelectedSong} 
@@ -220,7 +216,9 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                   onTogglePlay={togglePlayback}
                 />
             </div>
-
+            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
+                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" sizes="448px" />
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={resetFlow} className="w-full">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back

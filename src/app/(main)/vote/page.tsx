@@ -89,7 +89,8 @@ export default function VotePage() {
                       src={image.imageUrl}
                       alt="User submission"
                       fill
-                      className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
                       data-ai-hint={image.imageHint}
                     />
                   )}

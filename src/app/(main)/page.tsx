@@ -33,15 +33,15 @@ export default function HomePage() {
         {/* Left Images */}
         {galleryImages[0] && (
             <div className="hidden md:block absolute left-0 top-1/2 -translate-y-3/4 w-48 h-64 lg:w-52 lg:h-72 transform -rotate-12 hover:-rotate-6 hover:scale-105 transition-transform duration-300 z-0">
-                <Card className="h-full w-full overflow-hidden shadow-2xl">
-                    <Image src={galleryImages[0].imageUrl} alt={galleryImages[0].description} fill className="object-cover transform scale-x-[-1]" data-ai-hint={galleryImages[0].imageHint} />
+                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
+                    <Image src={galleryImages[0].imageUrl} alt={galleryImages[0].description} fill className="object-cover transform scale-x-[-1]" data-ai-hint={galleryImages[0].imageHint} sizes="(min-width: 1024px) 208px, 192px" />
                 </Card>
             </div>
         )}
         {galleryImages[1] && (
             <div className="hidden md:block absolute left-24 top-1/2 -translate-y-1/4 w-40 h-52 lg:w-44 lg:h-60 transform rotate-6 hover:rotate-2 hover:scale-105 transition-transform duration-300 z-20">
-                <Card className="h-full w-full overflow-hidden shadow-2xl">
-                    <Image src={galleryImages[1].imageUrl} alt={galleryImages[1].description} fill className="object-cover" data-ai-hint={galleryImages[1].imageHint} />
+                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
+                    <Image src={galleryImages[1].imageUrl} alt={galleryImages[1].description} fill className="object-cover" data-ai-hint={galleryImages[1].imageHint} sizes="(min-width: 1024px) 176px, 160px" />
                 </Card>
             </div>
         )}
@@ -68,15 +68,15 @@ export default function HomePage() {
         {/* Right Images */}
         {galleryImages[2] && (
             <div className="hidden md:block absolute right-0 top-1/2 -translate-y-3/4 w-48 h-64 lg:w-52 lg:h-72 transform rotate-12 hover:rotate-6 hover:scale-105 transition-transform duration-300 z-0">
-                <Card className="h-full w-full overflow-hidden shadow-2xl">
-                    <Image src={galleryImages[2].imageUrl} alt={galleryImages[2].description} fill className="object-cover" data-ai-hint={galleryImages[2].imageHint} />
+                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
+                    <Image src={galleryImages[2].imageUrl} alt={galleryImages[2].description} fill className="object-cover" data-ai-hint={galleryImages[2].imageHint} sizes="(min-width: 1024px) 208px, 192px" />
                 </Card>
             </div>
         )}
         {galleryImages[3] && (
             <div className="hidden md:block absolute right-24 top-1/2 -translate-y-1/4 w-40 h-52 lg:w-44 lg:h-60 transform -rotate-6 hover:-rotate-2 hover:scale-105 transition-transform duration-300 z-20">
-                <Card className="h-full w-full overflow-hidden shadow-2xl">
-                    <Image src={galleryImages[3].imageUrl} alt={galleryImages[3].description} fill className="object-cover transform scale-x-[-1]" data-ai-hint={galleryImages[3].imageHint} />
+                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
+                    <Image src={galleryImages[3].imageUrl} alt={galleryImages[3].description} fill className="object-cover transform scale-x-[-1]" data-ai-hint={galleryImages[3].imageHint} sizes="(min-width: 1024px) 176px, 160px" />
                 </Card>
             </div>
         )}

@@ -60,9 +60,9 @@ export default function LeaderboardPage() {
                                 <Card key={submission.id} className="overflow-hidden group">
                                     <CardContent className="p-0 relative">
                                         <div className="absolute top-2 left-2 z-10 bg-black/50 text-white h-8 w-8 rounded-full flex items-center justify-center font-bold text-lg">{index + 1}</div>
-                                        <div className="aspect-w-4 aspect-h-3">
+                                        <div className="relative aspect-[4/3]">
                                             {image && (
-                                                <Image src={image.imageUrl} alt="Top submission" width={800} height={600} className="object-cover w-full h-full" data-ai-hint={image.imageHint} />
+                                                <Image src={image.imageUrl} alt="Top submission" fill sizes="(max-width: 640px) 90vw, 45vw" className="object-cover" data-ai-hint={image.imageHint} />
                                             )}
                                         </div>
                                         <div className="p-4 flex justify-between items-center">
