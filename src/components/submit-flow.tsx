@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent } from 'react';
+import { useState, useRef, type ChangeEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Upload, Camera, ArrowLeft, Send } from 'lucide-react';
+import { Upload, Camera, ArrowLeft, Send, Play, Pause } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { MusicSearch } from './music-search';
 import type { Song } from '@/lib/musicService';
+import { musicService } from '@/lib/musicService';
 
 type Stage = 'select' | 'preview';
 
@@ -22,6 +23,10 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [isCameraOn, setIsCameraOn] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  // Audio playback state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -82,6 +87,11 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
 
   const resetFlow = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setIsPlaying(false);
+    }
     setImagePreview(null);
     setImageFile(null);
     setSelectedSong(null);
@@ -100,6 +110,44 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     });
     router.push('/');
   }
+
+  const togglePlayback = async () => {
+    if (!selectedSong || !selectedSong.videoId) return;
+
+    if (isPlaying) {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+    } else {
+        if (audioRef.current && audioRef.current.src.includes(selectedSong.videoId)) {
+            audioRef.current.play();
+            setIsPlaying(true);
+        } else {
+            try {
+                const streamUrl = await musicService.getStreamUrl(selectedSong.videoId);
+                if (streamUrl) {
+                    if (audioRef.current) audioRef.current.pause();
+                    audioRef.current = new Audio(streamUrl);
+                    audioRef.current.play();
+                    setIsPlaying(true);
+                    audioRef.current.onended = () => setIsPlaying(false);
+                } else {
+                    toast({ variant: 'destructive', title: 'Could not play preview.' });
+                }
+            } catch (error) {
+                console.error("Playback failed:", error);
+                toast({ variant: 'destructive', title: 'Could not play preview.' });
+            }
+        }
+    }
+  };
+
+  // Cleanup audio on component unmount or when song changes
+  useEffect(() => {
+    return () => {
+        audioRef.current?.pause();
+    }
+  }, [selectedSong]);
+
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -146,13 +194,18 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
         {stage === 'preview' && imagePreview && (
           <div className="space-y-4">
-             <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" />
-            </div>
-            
             <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Add a song (optional)</label>
-                <MusicSearch onSelectSong={setSelectedSong} selectedSong={selectedSong} />
+                <label className="text-sm font-medium">Add a song (optional)</label>
+                <MusicSearch 
+                  onSelectSong={setSelectedSong} 
+                  selectedSong={selectedSong}
+                  isPlaying={isPlaying}
+                  onTogglePlay={togglePlayback}
+                />
+            </div>
+
+            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
+                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" />
             </div>
 
             <div className="flex gap-2">

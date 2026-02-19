@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
-import { Search, X, Play, Music } from 'lucide-react';
+import { Search, X, Play, Music, Pause } from 'lucide-react';
 import { LensLoader } from './lens-loader';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -16,12 +16,16 @@ interface MusicSearchProps {
   onSelectSong: (song: Song | null) => void;
   selectedSong?: Song | null;
   className?: string;
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
 }
 
 export function MusicSearch({ 
   onSelectSong, 
   selectedSong, 
-  className = '' 
+  className = '',
+  isPlaying,
+  onTogglePlay,
 }: MusicSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Song[]>([]);
@@ -103,6 +107,8 @@ export function MusicSearch({
         const audio = new Audio(streamUrl);
         audio.volume = 0.5;
         audio.play().catch(err => toast({ variant: 'destructive', title: 'Could not play preview.'}));
+      } else {
+        toast({ variant: 'destructive', title: 'Could not play preview.'})
       }
     } catch (error) {
       console.error('Preview failed:', error);
@@ -131,14 +137,25 @@ export function MusicSearch({
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onSelectSong(null)}
-            className="h-8 w-8 flex-shrink-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center">
+            {selectedSong.videoId && onTogglePlay && (
+              <Button
+                  variant="ghost" size="icon"
+                  onClick={onTogglePlay}
+                  className="h-8 w-8 flex-shrink-0"
+              >
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onSelectSong(null)}
+              className="h-8 w-8 flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </Card>
       ) : (
         <div className="relative">
