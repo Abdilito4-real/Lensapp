@@ -40,15 +40,11 @@ export function AudioTrimmer({
     const loadAudio = async () => {
       setIsLoading(true);
       try {
-        const streamRes = await fetch(`/api/music/stream?videoId=${songId}`);
-        if (!streamRes.ok) throw new Error('Failed to get stream URL');
-        const streamData = await streamRes.json();
-
-        if (!streamData.url) throw new Error('No stream URL');
+        const streamUrl = `/api/stream-proxy?videoId=${songId}`;
 
         const sound = new Howl({
-          src: [streamData.url],
-          format: ['mp3', 'aac'],
+          src: [streamUrl],
+          format: ['mp3', 'm4a', 'aac'],
           html5: true,
           onload: () => {
             const soundDuration = sound.duration();
@@ -59,7 +55,7 @@ export function AudioTrimmer({
           },
           onloaderror: (id, err) => {
              console.error('Howler load error:', err);
-             toast({ variant: 'destructive', title: 'Could not load audio.'});
+             toast({ variant: 'destructive', title: 'Could not load audio.', description: 'No supported source was found.' });
              setIsLoading(false);
           },
           onplay: () => {
