@@ -52,6 +52,46 @@ const initialFilters = {
 
 const textColors = [ '#FFFFFF', '#000000', '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899' ];
 
+const DraggableText = ({
+  text,
+  onTextUpdate,
+  onDragStop,
+  onDoubleClick,
+}: {
+  text: TextElement;
+  onTextUpdate: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onDragStop: (e: any, data: { x: number; y: number }) => void;
+  onDoubleClick: (e: React.MouseEvent) => void;
+}) => {
+  const nodeRef = useRef(null);
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      position={text.position}
+      onStop={onDragStop}
+      bounds="parent"
+    >
+      <div
+        ref={nodeRef}
+        className="absolute cursor-move p-2"
+        onDoubleClick={onDoubleClick}
+      >
+        <Textarea
+          value={text.content}
+          onChange={onTextUpdate}
+          className="bg-transparent border-none focus-visible:ring-2 focus-visible:ring-primary resize-none text-center text-2xl font-bold p-0"
+          style={{
+            color: text.color,
+            textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+          }}
+          rows={1}
+        />
+      </div>
+    </Draggable>
+  );
+};
+
+
 export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [stage, setStage] = useState<Stage>('select');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -471,25 +511,18 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               />
               
               {texts.map((text) => (
-                <Draggable
+                <DraggableText
                   key={text.id}
-                  position={text.position}
-                  onStop={(_, data) => handleDragStop(text.id, data)}
-                  bounds="parent"
-                >
-                  <div className="absolute cursor-move p-2" onDoubleClick={(e) => { e.stopPropagation(); setActiveTextId(text.id); setEditPanel('text'); setIsEditPopoverOpen(true); }}>
-                    <Textarea
-                      value={text.content}
-                      onChange={(e) => handleTextUpdate(text.id, e.target.value)}
-                      className="bg-transparent border-none focus-visible:ring-2 focus-visible:ring-primary resize-none text-center text-2xl font-bold p-0"
-                      style={{ 
-                        color: text.color,
-                        textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
-                      }}
-                      rows={1}
-                    />
-                  </div>
-                </Draggable>
+                  text={text}
+                  onTextUpdate={(e) => handleTextUpdate(text.id, e.target.value)}
+                  onDragStop={(_, data) => handleDragStop(text.id, data)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTextId(text.id);
+                    setEditPanel('text');
+                    setIsEditPopoverOpen(true);
+                  }}
+                />
               ))}
 
               <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
