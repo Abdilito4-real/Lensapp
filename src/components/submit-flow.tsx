@@ -66,7 +66,7 @@ const fonts = [
 
 const textColors = [ '#FFFFFF', '#000000', '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899' ];
 
-const emojiList = ['😀', '😂', '😍', '🤔', '🎉', '🔥', '❤️', '👍', '💯', '✨', '🙏', '😎'];
+const emojiList = ['😀', '😂', '😍', '🤔', '🎉', '🔥', '❤️', '👍', '💯', '✨', '🙏', '😎', '😢', '😱', '🤩', '🥳', '🤯', '🙌', '👀', '💀'];
 
 const DraggableText = ({
   text,
@@ -423,8 +423,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const handleDragStop = (id: number, data: { x: number; y: number }) => {
     setTexts(texts.map(t => (t.id === id ? { ...t, position: { ...data } } : t)));
-    setActiveTextId(null);
-    setIsEditPopoverOpen(false);
   };
   
   const handleTextColorChange = (color: string) => {
@@ -630,7 +628,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Redo feature coming soon!"})}><Redo className="h-5 w-5" /></Button>
           </div>
 
-          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => setActiveTextId(null)}>
+          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setIsEditPopoverOpen(false);}}>
               <Image 
                 src={imagePreview} 
                 alt="Submission preview" 
