@@ -16,6 +16,7 @@ import {
   Undo,
   Redo,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,12 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 
 type Stage = 'select' | 'preview';
+
+const initialFilters = {
+  brightness: 100,
+  contrast: 100,
+  saturate: 100,
+};
 
 export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [stage, setStage] = useState<Stage>('select');
@@ -49,11 +56,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [caption, setCaption] = useState('');
   const [isMusicSearchOpen, setIsMusicSearchOpen] = useState(false);
 
-  const [filters, setFilters] = useState({
-    brightness: 100,
-    contrast: 100,
-    saturate: 100,
-  });
+  const [filters, setFilters] = useState(initialFilters);
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -124,7 +127,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setImagePreview(null);
     setImageFile(null);
     setSelectedSong(null);
-    setFilters({ brightness: 100, contrast: 100, saturate: 100 });
+    setFilters(initialFilters);
     setStage('select');
     stopCamera();
   };
@@ -188,6 +191,10 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsMusicSearchOpen(false);
   }
   
+  const handleResetFilters = () => {
+    setFilters(initialFilters);
+  };
+  
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
@@ -225,45 +232,54 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
                     <div className="grid gap-4">
-                        <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Edit Photo</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Adjust brightness, contrast, and saturation.
-                            </p>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h4 className="font-medium leading-none">Edit Filters</h4>
+                                <p className="text-sm text-muted-foreground">
+                                    Adjust your photo's look.
+                                </p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={handleResetFilters} className="h-8 w-8 flex-shrink-0">
+                                <RotateCcw className="h-4 w-4" />
+                                <span className="sr-only">Reset filters</span>
+                            </Button>
                         </div>
                         <div className="grid gap-2">
-                            <div className="grid grid-cols-3 items-center gap-4">
-                                <Label htmlFor="brightness">Brightness</Label>
+                             <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="brightness" className="col-span-2">Brightness</Label>
                                 <Slider
                                     id="brightness"
                                     value={[filters.brightness]}
                                     max={200}
                                     step={1}
                                     onValueChange={(value) => setFilters(f => ({ ...f, brightness: value[0] }))}
-                                    className="col-span-2"
+                                    className="col-span-3"
                                 />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.brightness}%</span>
                             </div>
-                            <div className="grid grid-cols-3 items-center gap-4">
-                                <Label htmlFor="contrast">Contrast</Label>
+                            <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="contrast" className="col-span-2">Contrast</Label>
                                 <Slider
                                     id="contrast"
                                     value={[filters.contrast]}
                                     max={200}
                                     step={1}
                                     onValueChange={(value) => setFilters(f => ({ ...f, contrast: value[0] }))}
-                                    className="col-span-2"
+                                    className="col-span-3"
                                 />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.contrast}%</span>
                             </div>
-                            <div className="grid grid-cols-3 items-center gap-4">
-                                <Label htmlFor="saturate">Saturation</Label>
+                            <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="saturate" className="col-span-2">Saturation</Label>
                                 <Slider
                                     id="saturate"
                                     value={[filters.saturate]}
                                     max={200}
                                     step={1}
                                     onValueChange={(value) => setFilters(f => ({ ...f, saturate: value[0] }))}
-                                    className="col-span-2"
+                                    className="col-span-3"
                                 />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.saturate}%</span>
                             </div>
                         </div>
                     </div>
