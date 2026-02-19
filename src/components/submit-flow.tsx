@@ -204,12 +204,12 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
           <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2">
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsMusicSearchOpen(true)}><Music className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2"><Crop className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2"><SlidersHorizontal className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2"><Type className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2"><Smile className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2"><Undo className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2"><Redo className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Crop feature coming soon!"})}><Crop className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Editing tools coming soon!"})}><SlidersHorizontal className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Text feature coming soon!"})}><Type className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Emoji feature coming soon!"})}><Smile className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Undo feature coming soon!"})}><Undo className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Redo feature coming soon!"})}><Redo className="h-5 w-5" /></Button>
           </div>
 
           <Card className="shadow-none border-none bg-transparent">
