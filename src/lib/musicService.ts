@@ -71,14 +71,8 @@ class MusicService {
    * Get streaming URL for a song
    */
   async getStreamUrl(videoId: string): Promise<string | null> {
-    try {
-      const response = await fetch(`/api/music/stream?videoId=${videoId}`);
-      const data = await response.json();
-      return data.url || null;
-    } catch (error) {
-      console.error('Stream URL error:', error);
-      return null;
-    }
+    // Simply return the proxy endpoint URL – the actual audio will be fetched from our own domain
+    return `/api/stream-proxy?videoId=${videoId}`;
   }
 
   /**
