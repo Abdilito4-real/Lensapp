@@ -8,14 +8,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(`https://verome-api.deno.dev/api/stream?id=${videoId}`);
+    const response = await fetch(`https://pipedapi.kavin.rocks/streams/${videoId}`);
     if (!response.ok) {
-        throw new Error(`Failed to fetch stream: ${response.statusText}`);
+        throw new Error(`Failed to fetch stream from piped: ${response.statusText}`);
     }
     const data = await response.json();
     
-    // Return the stream URL
-    return NextResponse.json(data);
+    // Find the best audio stream (m4a, highest quality)
+    const audioStream = data.audioStreams
+        .filter((s: any) => s.mimeType === 'audio/mp4')
+        .sort((a: any, b: any) => b.bitrate - a.bitrate)[0];
+
+    if (!audioStream?.url) {
+        // Fallback to any other audio stream if m4a is not available
+        const fallbackStream = data.audioStreams.sort((a: any, b: any) => b.bitrate - a.bitrate)[0];
+        if (!fallbackStream?.url) {
+            throw new Error('No suitable audio stream found.');
+        }
+        return NextResponse.json({ url: fallbackStream.url });
+    }
+    
+    // Return the stream URL in the expected format
+    return NextResponse.json({ url: audioStream.url });
   } catch (error) {
     console.error('Stream proxy error:', error);
     return NextResponse.json({ error: 'Failed to get stream' }, { status: 500 });
