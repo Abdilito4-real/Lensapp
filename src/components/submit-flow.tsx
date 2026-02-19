@@ -34,6 +34,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { ImageCropper } from './image-cropper';
 import Draggable from 'react-draggable';
+import { Input } from '@/components/ui/input';
 
 type Stage = 'select' | 'preview';
 
@@ -219,7 +220,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         return;
     }
 
-    const image = new Image();
+    const image = new window.Image();
     image.crossOrigin = 'anonymous';
     image.src = imagePreview;
 
@@ -439,6 +440,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                         <Button variant="ghost" size="icon" onClick={handleDeleteText} className="text-destructive h-8 w-8">
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="text-input">Content</Label>
+                          <Input
+                              id="text-input"
+                              value={activeText.content}
+                              onChange={(e) => handleTextUpdate(activeText.id, e.target.value)}
+                          />
                       </div>
                        <div className="space-y-2">
                           <Label>Font</Label>
