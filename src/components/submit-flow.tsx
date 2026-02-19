@@ -42,6 +42,7 @@ type TextElement = {
   content: string;
   position: { x: number; y: number };
   color: string;
+  fontFamily: string;
 };
 
 const initialFilters = {
@@ -49,6 +50,13 @@ const initialFilters = {
   contrast: 100,
   saturate: 100,
 };
+
+const fonts = [
+    { name: 'Inter', family: 'sans-serif', className: 'font-body' },
+    { name: 'Lobster', family: 'cursive', className: 'font-lobster' },
+    { name: 'Anton', family: 'sans-serif', className: 'font-anton' },
+    { name: 'Merriweather', family: 'serif', className: 'font-merriweather' },
+];
 
 const textColors = [ '#FFFFFF', '#000000', '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899' ];
 
@@ -82,6 +90,7 @@ const DraggableText = ({
           className="bg-transparent border-none focus-visible:ring-2 focus-visible:ring-primary resize-none text-center text-2xl font-bold p-0"
           style={{
             color: text.color,
+            fontFamily: text.fontFamily,
             textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
           }}
           rows={1}
@@ -234,7 +243,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
     texts.forEach(text => {
         const fontSize = 32 * Math.min(scaleX, scaleY);
-        ctx.font = `bold ${fontSize}px sans-serif`;
+        const genericFamily = fonts.find(f => f.name === text.fontFamily)?.family || 'sans-serif';
+        ctx.font = `bold ${fontSize}px "${text.fontFamily}", ${genericFamily}`;
         ctx.fillStyle = text.color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -345,6 +355,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         content: 'Your Text',
         position: { x: 0, y: 0 },
         color: '#FFFFFF',
+        fontFamily: 'Inter',
       },
     ]);
     setActiveTextId(newId);
@@ -368,6 +379,11 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setTexts(texts.map(t => t.id === activeTextId ? { ...t, color } : t));
   };
   
+  const handleFontChange = (fontFamily: string) => {
+    if (!activeTextId) return;
+    setTexts(texts.map(t => (t.id === activeTextId ? { ...t, fontFamily } : t)));
+  };
+
   const handleDeleteText = () => {
     if (!activeTextId) return;
     setTexts(texts.filter(t => t.id !== activeTextId));
@@ -424,15 +440,34 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {textColors.map(color => (
-                          <button 
-                            key={color}
-                            onClick={() => handleTextColorChange(color)}
-                            className="w-6 h-6 rounded-full border-2"
-                            style={{ backgroundColor: color, borderColor: activeText.color === color ? 'hsl(var(--primary))' : 'transparent' }}
-                          />
-                        ))}
+                       <div className="space-y-2">
+                          <Label>Font</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                              {fonts.map(font => (
+                                  <Button
+                                      key={font.name}
+                                      variant={activeText.fontFamily === font.name ? 'secondary' : 'outline'}
+                                      size="sm"
+                                      onClick={() => handleFontChange(font.name)}
+                                      className={`h-auto py-2 ${font.className}`}
+                                  >
+                                      {font.name}
+                                  </Button>
+                              ))}
+                          </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Color</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {textColors.map(color => (
+                            <button 
+                              key={color}
+                              onClick={() => handleTextColorChange(color)}
+                              className="w-6 h-6 rounded-full border-2"
+                              style={{ backgroundColor: color, borderColor: activeText.color === color ? 'hsl(var(--primary))' : 'transparent' }}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : (

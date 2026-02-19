@@ -13,6 +13,9 @@ export default {
         body: ['Inter', 'sans-serif'],
         headline: ['Inter', 'sans-serif'],
         code: ['monospace'],
+        lobster: ['Lobster', 'cursive'],
+        anton: ['Anton', 'sans-serif'],
+        merriweather: ['Merriweather', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
