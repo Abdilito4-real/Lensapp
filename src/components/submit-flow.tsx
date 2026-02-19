@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { MusicSearch } from './music-search';
-import type { Song } from '@/lib/definitions';
+import type { Song } from '@/lib/musicService';
 
 type Stage = 'select' | 'preview';
 
@@ -95,7 +95,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     toast({
       title: 'Submission Successful!',
       description: selectedSong
-        ? `Your photo with "${selectedSong.name}" has been submitted.`
+        ? `Your photo with "${selectedSong.title}" has been submitted.`
         : 'Your photo has been entered into the challenge.'
     });
     router.push('/');

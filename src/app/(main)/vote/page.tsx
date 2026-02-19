@@ -7,19 +7,22 @@ import { Heart, Play, Pause } from 'lucide-react';
 import { submissions } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
-import type { Song } from '@/lib/definitions';
+import type { Song } from '@/lib/musicService';
+import { musicService } from '@/lib/musicService';
+import { useToast } from '@/hooks/use-toast';
 
 export default function VotePage() {
   const [voted, setVoted] = useState<Record<string, boolean>>({});
   const [playingSong, setPlayingSong] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
 
   const handleVote = (submissionId: string) => {
     setVoted(prev => ({ ...prev, [submissionId]: !prev[submissionId] }));
   };
 
-  const togglePreview = (submissionId: string, song: Song) => {
-    if (!song.previewUrl) return;
+  const togglePreview = async (submissionId: string, song: Song) => {
+    if (!song.videoId) return;
 
     if (playingSong === submissionId) {
       audioRef.current?.pause();
@@ -28,10 +31,21 @@ export default function VotePage() {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      audioRef.current = new Audio(song.previewUrl);
-      audioRef.current.play();
-      setPlayingSong(submissionId);
-      audioRef.current.onended = () => setPlayingSong(null);
+
+      try {
+        const streamUrl = await musicService.getStreamUrl(song.videoId);
+        if (streamUrl) {
+            audioRef.current = new Audio(streamUrl);
+            audioRef.current.play();
+            setPlayingSong(submissionId);
+            audioRef.current.onended = () => setPlayingSong(null);
+        } else {
+            toast({ variant: 'destructive', title: 'Could not play preview.'})
+        }
+      } catch (error) {
+        console.error("Playback failed:", error);
+        toast({ variant: 'destructive', title: 'Could not play preview.'})
+      }
     }
   };
 
@@ -74,21 +88,21 @@ export default function VotePage() {
                 </div>
                 {submission.song && (
                   <div className="p-3 flex items-center gap-3 border-t">
-                      {submission.song.cover && (
+                      {submission.song.thumbnail && (
                           <Image
-                              src={submission.song.cover}
-                              alt={submission.song.name}
+                              src={submission.song.thumbnail}
+                              alt={submission.song.title}
                               width={40} height={40}
                               className="w-10 h-10 rounded object-cover"
                           />
                       )}
                       <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{submission.song.name}</p>
+                          <p className="font-medium text-sm truncate">{submission.song.title}</p>
                           <p className="text-xs text-muted-foreground truncate">
-                              {Array.isArray(submission.song.artist) ? submission.song.artist.join(', ') : submission.song.artist}
+                              {submission.song.artist}
                           </p>
                       </div>
-                      {submission.song.previewUrl && (
+                      {submission.song.videoId && (
                           <Button
                               variant="ghost" size="icon"
                               onClick={() => togglePreview(submission.id, submission.song!)}

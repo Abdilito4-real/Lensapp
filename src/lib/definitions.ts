@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { Song } from "./musicService";
 
 export type User = {
   id: string;
@@ -16,16 +17,6 @@ export type Challenge = {
   topic: string;
   description: string;
   date: string; // ISO string
-};
-
-export type Song = {
-  id: string;
-  name: string;
-  artist: string | string[];
-  album?: string;
-  cover?: string;
-  previewUrl?: string;
-  duration?: number;
 };
 
 export type Submission = {
