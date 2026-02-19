@@ -39,7 +39,9 @@ export function MusicSearch({ onSelectSong, selectedSong, className = '' }: Musi
           `https://verome-api.deno.dev/api/search?q=${encodeURIComponent(searchQuery)}&filter=songs`
         );
         const data = response.data;
-        const formattedSongs = data.map((item: any) => ({
+        // The API returns an object that contains the song list, not an array directly.
+        const songList = Array.isArray(data) ? data : data.data || [];
+        const formattedSongs = songList.map((item: any) => ({
           id: item.id,
           name: item.title,
           artist: item.artist,
