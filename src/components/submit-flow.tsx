@@ -1,16 +1,30 @@
-
 'use client';
 
 import { useState, useRef, type ChangeEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Upload, Camera, ArrowLeft, Send, Play, Pause } from 'lucide-react';
+import {
+  Upload,
+  Camera,
+  ArrowLeft,
+  Send,
+  Play,
+  Pause,
+  Music,
+  Crop,
+  SlidersHorizontal,
+  Type,
+  Smile,
+  Undo,
+  Redo,
+} from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { MusicSearch } from './music-search';
 import type { Song } from '@/lib/musicService';
 import { musicService } from '@/lib/musicService';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 
 type Stage = 'select' | 'preview';
 
@@ -28,7 +42,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [caption, setCaption] = useState('');
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,7 +56,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -56,7 +70,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       toast({ title: 'Camera Error', description: 'Could not access the camera.', variant: 'destructive' });
     }
   };
-  
+
   const stopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
@@ -64,7 +78,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       setIsCameraOn(false);
     }
   };
-  
+
   const takePicture = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -94,14 +108,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       audioRef.current = null;
       setIsPlaying(false);
     }
-    if(timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setImagePreview(null);
     setImageFile(null);
     setSelectedSong(null);
     setStage('select');
     stopCamera();
   };
-  
+
   const handleFinalSubmission = () => {
     toast({
       title: 'Submission Successful!',
@@ -116,9 +130,9 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     if (!selectedSong || !selectedSong.videoId) return;
 
     if (isPlaying && audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      audioRef.current.pause();
+      setIsPlaying(false);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     } else {
       try {
         const streamUrl = await musicService.getStreamUrl(selectedSong.videoId);
@@ -129,7 +143,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
             audioRef.current.onpause = () => setIsPlaying(false);
             audioRef.current.onended = () => setIsPlaying(false);
           }
-          
+
           const { startTime = 0, endTime } = selectedSong;
           audioRef.current.currentTime = startTime;
           audioRef.current.play();
@@ -156,30 +170,91 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   useEffect(() => {
     return () => {
-        audioRef.current?.pause();
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      audioRef.current?.pause();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }
   }, [selectedSong]);
 
+  if (stage === 'preview' && imagePreview) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <header className="flex items-center justify-between py-2">
+            <Button variant="ghost" size="icon" onClick={resetFlow}>
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg font-semibold">Edit</h1>
+            <div className="w-10"></div> {/* Spacer */}
+        </header>
 
+        <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2">
+            <Button variant="ghost" size="icon" className="h-auto p-2"><Music className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" className="h-auto p-2"><Crop className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" className="h-auto p-2"><SlidersHorizontal className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" className="h-auto p-2"><Type className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" className="h-auto p-2"><Smile className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" className="h-auto p-2"><Undo className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" className="h-auto p-2"><Redo className="h-5 w-5" /></Button>
+        </div>
+
+        <Card className="shadow-none border-none bg-transparent">
+          <CardHeader>
+            <CardTitle>Submit to "{challengeTopic}"</CardTitle>
+            <CardDescription>
+                Review your photo and add a song before submitting.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 !p-0">
+            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
+                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" sizes="(max-width: 448px) 100vw, 448px" />
+            </div>
+            <div className="space-y-4 p-4">
+              <div className="space-y-2">
+                  <label className="text-sm font-medium">Add a song (optional)</label>
+                  <MusicSearch
+                    onSelectSong={setSelectedSong}
+                    selectedSong={selectedSong}
+                    isPlaying={isPlaying}
+                    onTogglePlay={togglePlayback}
+                  />
+              </div>
+              <div className="space-y-2">
+                  <label className="text-sm font-medium">Add caption (optional)</label>
+                  <Textarea 
+                    placeholder="Add caption..."
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                  />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            <Button variant="outline" onClick={resetFlow} className="w-full">
+               Back
+            </Button>
+            <Button onClick={handleFinalSubmission} className="w-full">
+                Submit
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Original 'select' stage
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Submit to "{challengeTopic}"</CardTitle>
         <CardDescription>
-          {{
-            select: 'Choose a photo from your library or use your camera.',
-            preview: 'Review your photo and add a song before submitting.',
-          }[stage]}
+          Choose a photo from your library or use your camera.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {stage === 'select' && (
-          <div className="space-y-4">
+        <div className="space-y-4">
             {isCameraOn ? (
               <div className='flex flex-col items-center gap-4'>
                 <div className='w-full rounded-lg overflow-hidden border'>
-                  <video ref={videoRef} className="w-full h-auto" />
+                  <video ref={videoRef} className="w-full h-auto" autoPlay playsInline />
                   <canvas ref={canvasRef} className="hidden" />
                 </div>
                 <div className="flex w-full gap-2">
@@ -202,33 +277,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 </Button>
               </>
             )}
-          </div>
-        )}
-
-        {stage === 'preview' && imagePreview && (
-          <div className="space-y-4">
-             <div className="space-y-2">
-                <label className="text-sm font-medium">Add a song (optional)</label>
-                <MusicSearch 
-                  onSelectSong={setSelectedSong} 
-                  selectedSong={selectedSong}
-                  isPlaying={isPlaying}
-                  onTogglePlay={togglePlayback}
-                />
-            </div>
-            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" sizes="448px" />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={resetFlow} className="w-full">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button onClick={handleFinalSubmission} className="w-full">
-                  <Send className="mr-2 h-4 w-4"/> Submit
-              </Button>
-            </div>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
