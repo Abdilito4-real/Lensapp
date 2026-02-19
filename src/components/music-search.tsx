@@ -180,10 +180,17 @@ export function MusicSearch({
           <Card className="z-10 w-full mt-2 shadow-lg max-h-60 overflow-y-auto p-0">
             {results.length > 0 ? (
               results.map((song) => (
-                <button
+                <div
                   key={song.id}
                   onClick={() => handleSelectSong(song)}
-                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors border-b last:border-b-0 text-left"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleSelectSong(song);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors border-b last:border-b-0 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring rounded-md"
                 >
                   {song.thumbnail ? (
                     <Image
@@ -215,7 +222,7 @@ export function MusicSearch({
                       {previewingSongId === song.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </Button>
                   )}
-                </button>
+                </div>
               ))
             ) : (
               !loading && suggestions.length > 0 ? (
