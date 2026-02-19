@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Play, Pause } from 'lucide-react';
+import { Heart, Play, Pause, Music } from 'lucide-react';
 import { submissions } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
@@ -33,7 +33,7 @@ export default function VotePage() {
   }
 
   const togglePreview = async (submissionId: string, song: Song) => {
-    if (!song.videoId) return;
+    if (!song.title || !song.artist) return;
 
     if (playingSong === submissionId) {
         stopPlayback();
@@ -41,12 +41,12 @@ export default function VotePage() {
         stopPlayback(); // Stop any currently playing song
         
         try {
-            const audioUrl = await getAudioUrl(song.videoId);
-            const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
-
+            setPlayingSong(submissionId); // Optimistically set playing state
+            const audioUrl = await getAudioUrl(song.title, song.artist);
+            
             const sound = new Howl({
-                src: [streamUrl],
-                format: ['webm', 'm4a', 'mp4'],
+                src: [audioUrl],
+                format: ['mp3'],
                 html5: true,
                 onplay: () => {
                     setPlayingSong(submissionId);
@@ -61,13 +61,7 @@ export default function VotePage() {
                     setPlayingSong(null);
                 },
                 onloaderror: (id, error) => {
-                    const messages: Record<number, string> = {
-                        1: 'MEDIA_ERR_ABORTED',
-                        2: 'MEDIA_ERR_NETWORK',
-                        3: 'MEDIA_ERR_DECODE',
-                        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
-                    };
-                    console.error('Howl load error:', messages[error as number] ?? error, '| URL:', streamUrl);
+                    console.error('Howl load error:', error, '| URL:', audioUrl);
                     toast({ variant: 'destructive', title: 'Could not load audio.' });
                     setPlayingSong(null);
                 },
@@ -96,7 +90,8 @@ export default function VotePage() {
 
         } catch (error) {
             console.error("Playback failed:", error);
-            toast({ variant: 'destructive', title: 'Could not play preview.' })
+            toast({ variant: 'destructive', title: 'No preview available for this track.' })
+            setPlayingSong(null);
         }
     }
   };
@@ -112,6 +107,8 @@ export default function VotePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {submissions.map((submission) => {
           const image = PlaceHolderImages.find(p => p.id === submission.imageId);
+          const isPlaying = playingSong === submission.id;
+
           return (
             <Card key={submission.id} className="overflow-hidden group">
               <CardContent className="p-0">
@@ -125,6 +122,16 @@ export default function VotePage() {
                       sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
                       data-ai-hint={image.imageHint}
                     />
+                  )}
+                  {submission.song && (
+                    <div 
+                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                      onClick={() => togglePreview(submission.id, submission.song!)}
+                    >
+                      <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        {isPlaying ? <Pause className="h-10 w-10 text-white" /> : <Play className="h-10 w-10 text-white" />}
+                      </div>
+                    </div>
                   )}
                   <div className="absolute bottom-4 right-4">
                     <Button
@@ -155,14 +162,18 @@ export default function VotePage() {
                               {submission.song.artist}
                           </p>
                       </div>
-                      {submission.song.videoId && (
-                          <Button
-                              variant="ghost" size="icon"
-                              onClick={() => togglePreview(submission.id, submission.song!)}
-                              className="h-8 w-8 flex-shrink-0"
-                          >
-                            {playingSong === submission.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                          </Button>
+                      {isPlaying && (
+                          <div className="flex items-center gap-0.5 h-4">
+                            <span className="w-1 h-full bg-primary animate-[wave_1.2s_ease-in-out_-0.4s_infinite_both]"></span>
+                            <span className="w-1 h-2/3 bg-primary animate-[wave_1.2s_ease-in-out_-0.2s_infinite_both]"></span>
+                            <span className="w-1 h-full bg-primary animate-[wave_1.2s_ease-in-out_0s_infinite_both]"></span>
+                            <style>{`
+                              @keyframes wave {
+                                0%, 100% { transform: scaleY(0.5); }
+                                50% { transform: scaleY(1); }
+                              }
+                            `}</style>
+                          </div>
                       )}
                   </div>
                 )}

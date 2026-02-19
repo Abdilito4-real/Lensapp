@@ -1,52 +1,18 @@
-const PIPED_INSTANCES = [
-  'https://pipedapi.kavin.rocks',
-  'https://pipedapi.adminforge.de',
-  'https://piped-api.garudalinux.org',
-  'https://pipedapi.drgns.space',
-  'https://api.piped.projectsegfau.lt',
-  'https://pipedapi.tokhmi.xyz',
-  'https://pipedapi.moomoo.me',
-  'https://pipedapi.syncpundit.io',
-];
+export async function getAudioUrl(title: string, artist: string): Promise<string> {
+  const { token } = await fetch('/api/spotify-token').then(r => r.json());
 
-const INVIDIOUS_INSTANCES = [
-  'https://invidious.nerdvpn.de',
-  'https://invidious.privacydev.net',
-  'https://yt.cdaut.de',
-  'https://invidious.lunar.icu',
-  'https://iv.ggtyler.dev',
-  'https://iv.melmac.space',
-  'https://inv.zzls.xyz',
-  'https://invidious.tiekoetter.com',
-  'https://invidious.projectsegfau.lt',
-];
-
-export async function getAudioUrl(videoId: string): Promise<string> {
-  // Try Piped instances
-  for (const instance of PIPED_INSTANCES) {
-    try {
-      const res = await fetch(`${instance}/streams/${videoId}`, { signal: AbortSignal.timeout(5000) });
-      if (!res.ok) continue;
-      const meta = await res.json();
-      const stream = meta.audioStreams
-        ?.sort((a: any, b: any) => b.bitrate - a.bitrate)
-        .find((s: any) => s.mimeType?.includes('audio'));
-      if (stream?.url) return stream.url;
-    } catch {}
+  if (!token) {
+    throw new Error('Could not authenticate with Spotify');
   }
 
-  // Try Invidious instances
-  for (const instance of INVIDIOUS_INSTANCES) {
-    try {
-      const res = await fetch(`${instance}/api/v1/videos/${videoId}`, { signal: AbortSignal.timeout(5000) });
-      if (!res.ok) continue;
-      const meta = await res.json();
-      const stream = meta.adaptiveFormats
-        ?.filter((f: any) => f.type?.includes('audio'))
-        .sort((a: any, b: any) => b.bitrate - a.bitrate)[0];
-      if (stream?.url) return stream.url;
-    } catch {}
-  }
+  const q = encodeURIComponent(`track:${title} artist:${artist}`);
+  const res = await fetch(
+    `https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
-  throw new Error('No audio stream found');
+  const data = await res.json();
+  const previewUrl = data.tracks?.items?.[0]?.preview_url;
+  if (!previewUrl) throw new Error('No preview available for this track');
+  return previewUrl;
 }

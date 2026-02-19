@@ -91,7 +91,7 @@ export function MusicSearch({
 
   const handlePlayPreview = async (e: React.MouseEvent, song: Song) => {
     e.stopPropagation();
-    if (!song.videoId) return;
+    if (!song.title || !song.artist) return;
 
     if (previewingSongId === song.id) {
       stopPreview();
@@ -99,21 +99,24 @@ export function MusicSearch({
     }
 
     stopPreview(); // Stop any other preview
-
-    setPreviewingSongId(song.id);
+    setPreviewingSongId(song.id); // Show loading/playing state
 
     try {
-      const audioUrl = await getAudioUrl(song.videoId);
-      const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
-
+      const audioUrl = await getAudioUrl(song.title, song.artist);
+      
       const sound = new Howl({
-        src: [streamUrl],
-        format: ['webm', 'm4a', 'mp4'],
+        src: [audioUrl],
+        format: ['mp3'],
         html5: true,
         volume: 0.5,
         onplay: () => {
-             // Stop after 7 seconds
+            // Stop after 7 seconds
             setTimeout(() => sound.stop(), 7000);
+        },
+        onstop: () => {
+           if (previewAudioRef.current === sound) {
+              stopPreview();
+            }
         },
         onend: () => {
             if (previewAudioRef.current === sound) {
@@ -128,14 +131,8 @@ export function MusicSearch({
           }
         },
         onloaderror: (id, error) => {
-            const messages: Record<number, string> = {
-                1: 'MEDIA_ERR_ABORTED',
-                2: 'MEDIA_ERR_NETWORK',
-                3: 'MEDIA_ERR_DECODE',
-                4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
-            };
-            console.error('Howl load error:', messages[error as number] ?? error, '| URL:', streamUrl);
-            toast({ variant: 'destructive', title: 'Could not play preview.'});
+            console.error('Howl load error:', error, '| URL:', audioUrl);
+            toast({ variant: 'destructive', title: 'Failed to load song.'});
             if (previewAudioRef.current === sound) {
                 stopPreview();
             }
@@ -145,7 +142,7 @@ export function MusicSearch({
       sound.play();
     } catch (error) {
       console.error('Preview failed:', error);
-      toast({ variant: 'destructive', title: 'Could not play preview.' });
+      toast({ variant: 'destructive', title: 'No preview available for this track.' });
       stopPreview();
     }
   };

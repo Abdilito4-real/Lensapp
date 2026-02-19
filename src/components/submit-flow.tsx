@@ -427,7 +427,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsPlaying(false);
     setSelectedSong(null);
     
-    if (!song || !song.videoId) {
+    if (!song || !song.title || !song.artist) {
       return;
     }
 
@@ -435,14 +435,12 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setSelectedSong(song);
     setIsSongLoading(true);
 
-    getAudioUrl(song.videoId).then((audioUrl) => {
+    getAudioUrl(song.title, song.artist).then((audioUrl) => {
       if (!isMountedRef.current) return;
 
-      const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
-
       const sound = new Howl({
-        src: [streamUrl],
-        format: ['webm', 'm4a', 'mp4'],
+        src: [audioUrl],
+        format: ['mp3'],
         html5: true,
         onplay: () => {
           if (isMountedRef.current) setIsPlaying(true);
@@ -459,7 +457,15 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
             if (!isMountedRef.current) return;
             setIsSongLoading(false);
             
-            const { startTime = 0, endTime } = song;
+            const { startTime = 0 } = song;
+            let { endTime } = song;
+            const songDuration = sound.duration();
+
+            if(endTime && songDuration && endTime > songDuration) {
+              song.endTime = songDuration;
+              endTime = songDuration;
+            }
+
             sound.seek(startTime);
             sound.play();
 
@@ -473,7 +479,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
             }
         },
         onloaderror: (id, error) => {
-          console.error('Howl load error:', error, '| URL:', streamUrl);
+          console.error('Howl load error:', error, '| URL:', audioUrl);
           if (isMountedRef.current) {
             toast({ variant: 'destructive', title: 'Failed to load song.' });
             setIsSongLoading(false);
@@ -494,7 +500,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }).catch((error) => {
         console.error("Failed to get audio URL:", error);
         if (isMountedRef.current) {
-          toast({ variant: 'destructive', title: 'Failed to load song.' });
+          toast({ variant: 'destructive', title: 'No preview available for this track.' });
           setIsSongLoading(false);
           setSelectedSong(null);
         }
@@ -990,8 +996,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         )}
         {showTrimmer && selectedSong && (
             <AudioTrimmer
-              songId={selectedSong.videoId!}
               songTitle={selectedSong.title}
+              songArtist={selectedSong.artist}
               onSelectSegment={handleSegmentSelected}
               onClose={() => setShowTrimmer(false)}
             />

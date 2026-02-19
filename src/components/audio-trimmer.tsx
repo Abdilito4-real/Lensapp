@@ -10,15 +10,15 @@ import { useToast } from '@/hooks/use-toast';
 import { getAudioUrl } from '@/lib/get-audio-url';
 
 interface AudioTrimmerProps {
-  songId: string;
   songTitle: string;
+  songArtist: string;
   onSelectSegment: (startTime: number, endTime: number) => void;
   onClose: () => void;
 }
 
 export function AudioTrimmer({
-  songId,
   songTitle,
+  songArtist,
   onSelectSegment,
   onClose,
 }: AudioTrimmerProps) {
@@ -41,12 +41,11 @@ export function AudioTrimmer({
     const loadAudio = async () => {
       setIsLoading(true);
       try {
-        const audioUrl = await getAudioUrl(songId);
-        const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
+        const audioUrl = await getAudioUrl(songTitle, songArtist);
 
         const sound = new Howl({
-          src: [streamUrl],
-          format: ['webm', 'm4a', 'mp4'],
+          src: [audioUrl],
+          format: ['mp3'],
           html5: true,
           onload: () => {
             const soundDuration = sound.duration();
@@ -56,14 +55,8 @@ export function AudioTrimmer({
             generateWaveform();
           },
           onloaderror: (id, error) => {
-             const messages: Record<number, string> = {
-                1: 'MEDIA_ERR_ABORTED',
-                2: 'MEDIA_ERR_NETWORK',
-                3: 'MEDIA_ERR_DECODE',
-                4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
-            };
-            console.error('Howl load error:', messages[error as number] ?? error, '| URL:', streamUrl);
-             toast({ variant: 'destructive', title: 'Could not load audio.', description: 'No supported source was found.' });
+             console.error('Howl load error:', error, '| URL:', audioUrl);
+             toast({ variant: 'destructive', title: 'Could not load audio.', description: 'The audio format might not be supported.' });
              setIsLoading(false);
           },
           onplay: () => {
@@ -97,8 +90,9 @@ export function AudioTrimmer({
         soundRef.current = sound;
       } catch (error) {
         console.error('Failed to load audio:', error);
-        toast({ variant: 'destructive', title: 'Could not load audio.'});
+        toast({ variant: 'destructive', title: 'No preview available for this track.'});
         setIsLoading(false);
+        onClose();
       }
     };
 
@@ -110,7 +104,8 @@ export function AudioTrimmer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [songId, endTime, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [songTitle, songArtist]);
 
   const generateWaveform = () => {
     const canvas = canvasRef.current;
