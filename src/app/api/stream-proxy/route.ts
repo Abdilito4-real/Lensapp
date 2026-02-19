@@ -1,84 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  const videoId = request.nextUrl.searchParams.get('videoId');
+const PIPED_INSTANCES = [
+  'https://pipedapi.kavin.rocks',
+  'https://pipedapi.adminforge.de',
+];
+
+async function getStreamFromPiped(videoId: string) {
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const meta = await fetch(`${instance}/streams/${videoId}`).then(res => {
+        if (!res.ok) throw new Error(`Request to ${instance} failed with status ${res.status}`);
+        return res.json();
+      });
+      const audioStream = meta.audioStreams
+        ?.sort((a: any, b: any) => b.bitrate - a.bitrate)
+        .find((s: any) => s.mimeType?.includes('audio'));
+      
+      if (audioStream?.url) {
+        console.log(`[stream-proxy] Using Piped instance: ${instance}`);
+        return audioStream;
+      }
+    } catch (e) {
+      console.error(`[stream-proxy] Piped instance ${instance} failed:`, e);
+      // continue to next instance
+    }
+  }
+  return null;
+}
+
+export async function GET(req: NextRequest) {
+  const videoId = req.nextUrl.searchParams.get('videoId');
   if (!videoId) {
     return new NextResponse('Missing videoId', { status: 400 });
   }
 
   try {
-    console.log(`[stream-proxy] Fetching stream info for videoId: ${videoId}`);
-    
-    // 1. Get the stream metadata from Verome API
-    const streamRes = await fetch(`https://verome-api.deno.dev/api/stream?id=${videoId}`);
-    if (!streamRes.ok) {
-      console.error('[stream-proxy] Verome API error:', streamRes.status, await streamRes.text());
-      return new NextResponse('Failed to get stream info', { status: 500 });
-    }
-    
-    const data = await streamRes.json();
-    console.log('[stream-proxy] Verome API response keys:', Object.keys(data));
-
-    // 2. Extract a playable audio URL
-    let audioUrl: string | null = null;
-
-    // The API returns an array `streamingUrls` with different audio formats.
-    if (data.streamingUrls && Array.isArray(data.streamingUrls) && data.streamingUrls.length > 0) {
-      // Prefer itag 251 (opus high quality) or 140 (m4a aac), otherwise take the first.
-      const preferredItags = ['251', '140']; // in order of preference
-      let selected = data.streamingUrls.find((item: any) => 
-        preferredItags.includes(String(item.itag)) && item.directUrl
-      );
-      if (!selected) {
-        selected = data.streamingUrls.find((item: any) => item.directUrl || item.url); // fallback to first with a URL
-      }
-      if (selected) {
-        // Use directUrl if available, else url
-        audioUrl = selected.directUrl || selected.url;
-        console.log('[stream-proxy] Selected format itag:', selected.itag);
-      }
+    const audioStream = await getStreamFromPiped(videoId);
+    if (!audioStream?.url) {
+      return new NextResponse('No audio stream found from any Piped instance', { status: 404 });
     }
 
-    if (!audioUrl) {
-      console.error('[stream-proxy] No playable audio URL found in response');
-      return new NextResponse('No audio URL available', { status: 500 });
-    }
-
-    console.log('[stream-proxy] Fetching audio from:', audioUrl);
-
-    // 3. Fetch the audio stream with appropriate headers
-    const audioRes = await fetch(audioUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': '*/*',
-        'Range': request.headers.get('range') || '',
-        'Referer': 'https://verome-api.deno.dev/',
-      },
+    // Proxy with range request support
+    const rangeHeader = req.headers.get('range');
+    const upstreamRes = await fetch(audioStream.url, {
+      headers: rangeHeader ? { 'Range': rangeHeader } : {},
     });
 
-    if (!audioRes.ok && audioRes.status !== 206) {
-      console.error('[stream-proxy] Audio fetch failed:', audioRes.status, await audioRes.text());
-      return new NextResponse('Audio source error', { status: audioRes.status });
-    }
-    
-    const contentType = audioRes.headers.get('content-type');
-    if (!contentType || (!contentType.startsWith('audio/') && !contentType.startsWith('video/'))) {
-      console.error('[stream-proxy] Upstream response is not audio/video. Content-Type:', contentType);
-      return new NextResponse('Invalid content type from upstream', { status: 502 });
+    if (!upstreamRes.ok) {
+       console.error(`[stream-proxy] Upstream fetch failed with status: ${upstreamRes.status}`);
+       return new NextResponse(upstreamRes.body, { status: upstreamRes.status, statusText: upstreamRes.statusText });
     }
 
-    // 4. Prepare response headers
-    const headers = new Headers(audioRes.headers);
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    headers.set('Access-Control-Allow-Headers', 'Range');
-    headers.set('content-type', contentType);
+    const headers = new Headers(upstreamRes.headers);
+    // Ensure correct content type and allow range requests
+    headers.set('Content-Type', audioStream.mimeType ?? 'audio/webm');
+    headers.set('Accept-Ranges', 'bytes');
+    headers.set('Cache-Control', 'no-store');
 
-    console.log('[stream-proxy] Streaming audio, status:', audioRes.status);
-    return new NextResponse(audioRes.body, {
-      status: audioRes.status,
-      statusText: audioRes.statusText,
-      headers,
+    return new NextResponse(upstreamRes.body, {
+      status: upstreamRes.status,
+      statusText: upstreamRes.statusText,
+      headers: headers,
     });
   } catch (error) {
     console.error('[stream-proxy] Internal error:', error);

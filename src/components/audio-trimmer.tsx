@@ -44,7 +44,7 @@ export function AudioTrimmer({
 
         const sound = new Howl({
           src: [streamUrl],
-          format: ['mp3', 'm4a', 'aac'],
+          format: ['webm', 'm4a'],
           html5: true,
           onload: () => {
             const soundDuration = sound.duration();

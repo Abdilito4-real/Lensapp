@@ -107,7 +107,7 @@ export function MusicSearch({
 
       const sound = new Howl({
         src: [streamUrl],
-        format: ['mp3', 'aac', 'm4a'], // Allow common formats
+        format: ['webm', 'm4a'], // Allow common formats
         html5: true, // Use HTML5 Audio to avoid WebAudio CORS issues
         volume: 0.5,
         onplay: () => {
