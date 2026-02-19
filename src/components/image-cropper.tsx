@@ -4,8 +4,6 @@
 import { useState, useRef } from 'react';
 import ReactCrop, {
   type Crop,
-  centerCrop,
-  makeAspectCrop,
 } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Button } from './ui/button';
@@ -22,7 +20,6 @@ interface ImageCropperProps {
   imageSrc: string;
   onCropComplete: (croppedImageUrl: string) => void;
   onClose: () => void;
-  aspect?: number;
 }
 
 // Function to crop the image client-side
@@ -73,28 +70,19 @@ export function ImageCropper({
   imageSrc,
   onCropComplete,
   onClose,
-  aspect = 3 / 4,
 }: ImageCropperProps) {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<Crop>();
   const imgRef = useRef<HTMLImageElement>(null);
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
-    const { width, height } = e.currentTarget;
-    const initialCrop = centerCrop(
-      makeAspectCrop(
-        {
-          unit: '%',
-          width: 90,
-        },
-        aspect,
-        width,
-        height
-      ),
-      width,
-      height
-    );
-    setCrop(initialCrop);
+    setCrop({
+      unit: '%',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+    });
   }
 
   async function handleCrop() {
@@ -125,7 +113,6 @@ export function ImageCropper({
             crop={crop}
             onChange={(_, percentCrop) => setCrop(percentCrop)}
             onComplete={c => setCompletedCrop(c)}
-            aspect={aspect}
             className="max-h-[60vh]"
           >
             <img
