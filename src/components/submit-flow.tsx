@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, type ChangeEvent, useEffect } from 'react';
@@ -30,6 +31,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { ImageCropper } from './image-cropper';
 
 type Stage = 'select' | 'preview';
 
@@ -58,6 +60,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const [filters, setFilters] = useState(initialFilters);
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
+  const [isCropping, setIsCropping] = useState(false);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -124,12 +127,16 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       setIsPlaying(false);
     }
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setImagePreview(null);
     setImageFile(null);
     setSelectedSong(null);
     setFilters(initialFilters);
     setStage('select');
     stopCamera();
+    setIsCropping(false);
   };
 
   const handleFinalSubmission = () => {
@@ -195,12 +202,41 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setFilters(initialFilters);
   };
   
+  const handleCropComplete = async (croppedImageSrc: string) => {
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    
+    setImagePreview(croppedImageSrc);
+    
+    try {
+        const response = await fetch(croppedImageSrc);
+        const blob = await response.blob();
+        const newFile = new File([blob], imageFile?.name || 'cropped.jpg', {
+            type: blob.type,
+        });
+        setImageFile(newFile);
+    } catch (error) {
+        console.error("Could not convert blob to file:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Failed to apply crop.',
+            description: 'There was an issue processing the cropped image.',
+        });
+    }
+    
+    setIsCropping(false);
+};
+
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
     }
-  }, []);
+  }, [imagePreview]);
 
   useEffect(() => {
     if (!selectedSong && audioRef.current) {
@@ -222,7 +258,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
           <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2">
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsMusicSearchOpen(true)}><Music className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Crop feature coming soon!"})}><Crop className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsCropping(true)}><Crop className="h-5 w-5" /></Button>
               
               <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
                 <PopoverTrigger asChild>
@@ -386,6 +422,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 <MusicSearch onSelectSong={handleSongSelected} />
             </DialogContent>
         </Dialog>
+
+        {isCropping && imagePreview && (
+            <ImageCropper 
+                imageSrc={imagePreview}
+                onClose={() => setIsCropping(false)}
+                onCropComplete={handleCropComplete}
+            />
+        )}
       </>
     );
   }
