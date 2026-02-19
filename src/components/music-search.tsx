@@ -41,7 +41,8 @@ export function MusicSearch({ onSelectSong, selectedSong, className = '' }: Musi
           )}&filter=songs`
         );
         const data = response.data;
-        const formattedSongs = data.data.map((item: any) => ({
+        const songs = data.data || [];
+        const formattedSongs = songs.map((item: any) => ({
           id: item.id,
           name: item.title,
           artist: item.artist,
