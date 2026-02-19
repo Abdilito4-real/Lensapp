@@ -26,7 +26,7 @@ class MusicService {
   async searchSongs(query: string, filter: string = 'songs'): Promise<Song[]> {
     try {
       const response = await fetch(
-        `${BASE_URL}/api/search?q=${encodeURIComponent(query)}&filter=${filter}`
+        `/api/music/search?q=${encodeURIComponent(query)}&filter=${filter}`
       );
       
       if (!response.ok) {
@@ -36,13 +36,15 @@ class MusicService {
       const data = await response.json();
       
       // Transform API response to your app's Song interface
-      return (data.data || []).map((item: any) => ({
+      return (data.results || [])
+        .filter((item: any) => item.resultType === 'song' && item.videoId)
+        .map((item: any) => ({
         id: item.videoId || item.id,
         videoId: item.videoId,
         title: item.title,
         artist: item.artists?.[0]?.name || item.artist || 'Unknown Artist',
         album: item.album?.name || item.album,
-        thumbnail: item.thumbnail?.url || item.thumbnail,
+        thumbnail: item.thumbnails?.[0]?.url,
         duration: item.duration,
       }));
     } catch (error) {
