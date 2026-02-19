@@ -11,6 +11,8 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useActionState } from 'react';
 import { LensLoader } from './lens-loader';
+import { MusicSearch } from './music-search';
+import type { Song } from '@/lib/definitions';
 
 type Stage = 'select' | 'preview' | 'result';
 
@@ -24,6 +26,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [stage, setStage] = useState<Stage>('select');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
@@ -110,13 +113,15 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const resetFlow = () => {
     setImagePreview(null);
     setImageFile(null);
+    setSelectedSong(null);
     setStage('select');
     stopCamera();
   };
   
   const handleFinalSubmission = () => {
     // In a real app, this would upload the file to Firebase Storage
-    // and create a document in Firestore.
+    // and create a document in Firestore with photo and song data.
+    console.log('Submitting with song:', selectedSong);
     toast({ title: 'Submission Successful!', description: 'Your photo has been entered into the challenge.' });
     router.push('/');
   }
@@ -204,12 +209,19 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                     <AlertDescription>{moderationState.error}</AlertDescription>
                 </Alert>
             )}
-            {typeof moderationState.alignsWithTopic !== 'undefined' && (
+            {typeof moderationState.alignsWithTopic !== 'undefined' && !moderationState.error && (
                 <Alert variant={moderationState.alignsWithTopic ? 'default' : 'destructive'}>
                     {moderationState.alignsWithTopic ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
                     <AlertTitle>{moderationState.alignsWithTopic ? "Looks Good!" : "Doesn't Seem to Match"}</AlertTitle>
                     <AlertDescription>{moderationState.reason}</AlertDescription>
                 </Alert>
+            )}
+
+            {moderationState.alignsWithTopic && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Add a song (optional)</label>
+                <MusicSearch onSelectSong={setSelectedSong} selectedSong={selectedSong} />
+              </div>
             )}
 
             <div className="flex gap-2">

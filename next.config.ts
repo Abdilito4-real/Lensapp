@@ -52,6 +52,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'p2.music.126.net',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
 };
