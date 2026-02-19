@@ -41,7 +41,8 @@ export function MusicSearch({ onSelectSong, selectedSong, className = '' }: Musi
           )}&filter=songs`
         );
         const data = response.data;
-        const songs = data.data || [];
+        // The API returns an array directly, so we check for it.
+        const songs = Array.isArray(data) ? data : [];
         const formattedSongs = songs.map((item: any) => ({
           id: item.id,
           name: item.title,
