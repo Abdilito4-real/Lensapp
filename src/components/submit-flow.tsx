@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, type ChangeEvent, useEffect } from 'react';
@@ -24,9 +25,10 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const { toast } = useToast();
   const router = useRouter();
 
-  // Audio playback state
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -92,6 +94,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       audioRef.current = null;
       setIsPlaying(false);
     }
+    if(timeoutRef.current) clearTimeout(timeoutRef.current);
     setImagePreview(null);
     setImageFile(null);
     setSelectedSong(null);
@@ -100,8 +103,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
   
   const handleFinalSubmission = () => {
-    // In a real app, this would upload the file to Firebase Storage
-    // and create a document in Firestore with photo and song data.
     toast({
       title: 'Submission Successful!',
       description: selectedSong
@@ -114,37 +115,49 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const togglePlayback = async () => {
     if (!selectedSong || !selectedSong.videoId) return;
 
-    if (isPlaying) {
-        audioRef.current?.pause();
+    if (isPlaying && audioRef.current) {
+        audioRef.current.pause();
         setIsPlaying(false);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
     } else {
-        if (audioRef.current && audioRef.current.src.includes(selectedSong.videoId)) {
-            audioRef.current.play();
-            setIsPlaying(true);
+      try {
+        const streamUrl = await musicService.getStreamUrl(selectedSong.videoId);
+        if (streamUrl) {
+          if (!audioRef.current || audioRef.current.src !== streamUrl) {
+            if (audioRef.current) audioRef.current.pause();
+            audioRef.current = new Audio(streamUrl);
+            audioRef.current.onpause = () => setIsPlaying(false);
+            audioRef.current.onended = () => setIsPlaying(false);
+          }
+          
+          const { startTime = 0, endTime } = selectedSong;
+          audioRef.current.currentTime = startTime;
+          audioRef.current.play();
+          setIsPlaying(true);
+
+          if (endTime) {
+            const duration = (endTime - startTime) * 1000;
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            timeoutRef.current = setTimeout(() => {
+              audioRef.current?.pause();
+              setIsPlaying(false);
+            }, duration);
+          }
+
         } else {
-            try {
-                const streamUrl = await musicService.getStreamUrl(selectedSong.videoId);
-                if (streamUrl) {
-                    if (audioRef.current) audioRef.current.pause();
-                    audioRef.current = new Audio(streamUrl);
-                    audioRef.current.play();
-                    setIsPlaying(true);
-                    audioRef.current.onended = () => setIsPlaying(false);
-                } else {
-                    toast({ variant: 'destructive', title: 'Could not play preview.' });
-                }
-            } catch (error) {
-                console.error("Playback failed:", error);
-                toast({ variant: 'destructive', title: 'Could not play preview.' });
-            }
+          toast({ variant: 'destructive', title: 'Could not play preview.' });
         }
+      } catch (error) {
+        console.error("Playback failed:", error);
+        toast({ variant: 'destructive', title: 'Could not play preview.' });
+      }
     }
   };
 
-  // Cleanup audio on component unmount or when song changes
   useEffect(() => {
     return () => {
         audioRef.current?.pause();
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }
   }, [selectedSong]);
 
@@ -194,6 +207,10 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
         {stage === 'preview' && imagePreview && (
           <div className="space-y-4">
+            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
+                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" />
+            </div>
+
             <div className="space-y-2">
                 <label className="text-sm font-medium">Add a song (optional)</label>
                 <MusicSearch 
@@ -202,10 +219,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                   isPlaying={isPlaying}
                   onTogglePlay={togglePlayback}
                 />
-            </div>
-
-            <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-                <Image src={imagePreview} alt="Submission preview" fill className="object-cover" />
             </div>
 
             <div className="flex gap-2">

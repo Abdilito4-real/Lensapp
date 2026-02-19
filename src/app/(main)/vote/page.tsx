@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef } from 'react';
 import Image from 'next/image';
@@ -15,6 +16,7 @@ export default function VotePage() {
   const [voted, setVoted] = useState<Record<string, boolean>>({});
   const [playingSong, setPlayingSong] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   const handleVote = (submissionId: string) => {
@@ -27,18 +29,36 @@ export default function VotePage() {
     if (playingSong === submissionId) {
       audioRef.current?.pause();
       setPlayingSong(null);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
       try {
         const streamUrl = await musicService.getStreamUrl(song.videoId);
         if (streamUrl) {
             audioRef.current = new Audio(streamUrl);
+            const { startTime = 0, endTime } = song;
+
+            audioRef.current.currentTime = startTime;
             audioRef.current.play();
             setPlayingSong(submissionId);
-            audioRef.current.onended = () => setPlayingSong(null);
+            
+            const onEnded = () => {
+                setPlayingSong(null);
+            };
+
+            audioRef.current.addEventListener('ended', onEnded);
+            audioRef.current.addEventListener('pause', onEnded);
+
+            if (endTime) {
+              const duration = (endTime - startTime) * 1000;
+              timeoutRef.current = setTimeout(() => {
+                audioRef.current?.pause();
+              }, duration);
+            }
         } else {
             toast({ variant: 'destructive', title: 'Could not play preview.'})
         }

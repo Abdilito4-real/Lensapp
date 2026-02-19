@@ -36,6 +36,8 @@ export const submissions: Submission[] = [
       artist: 'Doja Cat',
       album: 'Scarlet',
       thumbnail: 'https://p2.music.126.net/wns4gS-nJXx_e80bKx-Q8A==/109951168341822557.jpg?param=300x300',
+      startTime: 30,
+      endTime: 50,
     }
   },
   { id: 'submission-2', userId: 'user-2', challengeId: 'challenge-0', imageId: 'submission-2', upvotes: 35, timestamp: '2023-10-26T11:00:00Z' },

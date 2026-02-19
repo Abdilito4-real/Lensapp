@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -11,6 +12,7 @@ import { Search, X, Play, Music, Pause } from 'lucide-react';
 import { LensLoader } from './lens-loader';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { AudioTrimmer } from './audio-trimmer';
 
 interface MusicSearchProps {
   onSelectSong: (song: Song | null) => void;
@@ -20,9 +22,9 @@ interface MusicSearchProps {
   onTogglePlay?: () => void;
 }
 
-export function MusicSearch({ 
-  onSelectSong, 
-  selectedSong, 
+export function MusicSearch({
+  onSelectSong,
+  selectedSong,
   className = '',
   isPlaying,
   onTogglePlay,
@@ -34,6 +36,9 @@ export function MusicSearch({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const [showTrimmer, setShowTrimmer] = useState(false);
+  const [songToTrim, setSongToTrim] = useState<Song | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -51,7 +56,6 @@ export function MusicSearch({
         setResults([]);
         return;
       }
-
       setLoading(true);
       try {
         const songs = await musicService.searchSongs(searchQuery);
@@ -59,10 +63,10 @@ export function MusicSearch({
       } catch (error) {
         console.error('Search failed:', error);
         toast({
-            variant: "destructive",
-            title: "Music search failed",
-            description: "Could not fetch song results. Please try again."
-        })
+          variant: 'destructive',
+          title: 'Music search failed',
+          description: 'Could not fetch song results. Please try again.',
+        });
       } finally {
         setLoading(false);
       }
@@ -76,8 +80,12 @@ export function MusicSearch({
         setSuggestions([]);
         return;
       }
-      const sugg = await musicService.getSuggestions(searchQuery);
-      setSuggestions(sugg);
+      try {
+        const sugg = await musicService.getSuggestions(searchQuery);
+        setSuggestions(sugg);
+      } catch (error) {
+        console.error('Failed to get suggestions:', error);
+      }
     }, 200),
     []
   );
@@ -91,10 +99,23 @@ export function MusicSearch({
     };
   }, [query, searchSongs, fetchSuggestions]);
 
-  const handleSelectSong = (song: Song) => {
-    onSelectSong(song);
+  const handleOpenTrimmer = (song: Song) => {
+    setSongToTrim(song);
+    setShowTrimmer(true);
     setIsOpen(false);
-    setQuery('');
+  };
+  
+  const handleSegmentSelected = (startTime: number, endTime: number) => {
+    if (songToTrim) {
+      onSelectSong({
+        ...songToTrim,
+        startTime,
+        endTime,
+        duration: endTime - startTime
+      });
+    }
+    setSongToTrim(null);
+    setShowTrimmer(false);
   };
 
   const handlePlayPreview = async (e: React.MouseEvent, song: Song) => {
@@ -106,139 +127,152 @@ export function MusicSearch({
       if (streamUrl) {
         const audio = new Audio(streamUrl);
         audio.volume = 0.5;
-        audio.play().catch(err => toast({ variant: 'destructive', title: 'Could not play preview.'}));
+        audio.play().catch(err => toast({ variant: 'destructive', title: 'Could not play preview.' }));
       } else {
-        toast({ variant: 'destructive', title: 'Could not play preview.'})
+        toast({ variant: 'destructive', title: 'Could not play preview.' });
       }
     } catch (error) {
       console.error('Preview failed:', error);
-      toast({ variant: 'destructive', title: 'Could not play preview.'});
+      toast({ variant: 'destructive', title: 'Could not play preview.' });
     }
   };
 
   return (
-    <div className={cn('relative', className)} ref={dropdownRef}>
-      {selectedSong ? (
-        <Card className="p-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            {selectedSong.thumbnail && (
-              <Image 
-                src={selectedSong.thumbnail} 
-                alt={selectedSong.title}
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded object-cover flex-shrink-0"
-              />
-            )}
-            <div className="min-w-0">
-              <p className="font-medium truncate">{selectedSong.title}</p>
-              <p className="text-sm text-muted-foreground truncate">
-                {selectedSong.artist}
-              </p>
+    <>
+      <div className={cn('relative', className)} ref={dropdownRef}>
+        {selectedSong ? (
+          <Card className="p-3 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              {selectedSong.thumbnail && (
+                <Image
+                  src={selectedSong.thumbnail}
+                  alt={selectedSong.title}
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded object-cover flex-shrink-0"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="font-medium truncate">{selectedSong.title}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {selectedSong.artist}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center">
-            {selectedSong.videoId && onTogglePlay && (
-              <Button
-                  variant="ghost" size="icon"
+            <div className="flex items-center">
+              {selectedSong.videoId && onTogglePlay && (
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={onTogglePlay}
                   className="h-8 w-8 flex-shrink-0"
+                >
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onSelectSong(null)}
+                className="h-8 w-8 flex-shrink-0"
               >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                <X className="h-4 w-4" />
               </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onSelectSong(null)}
-              className="h-8 w-8 flex-shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </Card>
-      ) : (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsOpen(true)}
-            placeholder="Add a song to your photo..."
-            className="w-full pl-10"
-          />
-
-          {loading && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <LensLoader className="w-5 h-5" />
             </div>
-          )}
-        </div>
-      )}
-
-      {isOpen && query && !selectedSong && (
-        <Card className="absolute z-10 w-full mt-1 shadow-lg max-h-60 overflow-y-auto p-0">
-          {results.length > 0 ? (
-            results.map((song) => (
-              <button
-                key={song.id}
-                onClick={() => handleSelectSong(song)}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors border-b last:border-b-0 text-left"
-              >
-                {song.thumbnail ? (
-                  <Image 
-                    src={song.thumbnail} 
-                    alt={song.title}
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                    <Music className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium">{song.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {song.artist}
-                  </p>
-                </div>
-                {song.videoId && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => handlePlayPreview(e, song)}
-                    className="h-8 w-8 flex-shrink-0"
-                  >
-                    <Play className="h-4 w-4" />
-                  </Button>
-                )}
-              </button>
-            ))
-          ) : (
-            !loading && suggestions.length > 0 ? (
-              <div className="p-2">
-                {suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setQuery(suggestion)}
-                    className="w-full px-4 py-2 text-left hover:bg-muted rounded"
-                  >
-                    <span className="text-muted-foreground">{suggestion}</span>
-                  </button>
-                ))}
+          </Card>
+        ) : (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setIsOpen(true)}
+              placeholder="Add a song to your photo..."
+              className="w-full pl-10"
+            />
+            {loading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <LensLoader className="w-5 h-5" />
               </div>
-            ) : null
-          )}
-          {!loading && results.length === 0 && suggestions.length === 0 && (
-            <div className="px-4 py-8 text-center text-muted-foreground">
-              No songs found.
-            </div>
-          )}
-        </Card>
+            )}
+          </div>
+        )}
+        {isOpen && query && !selectedSong && (
+          <Card className="absolute z-10 w-full mt-1 shadow-lg max-h-60 overflow-y-auto p-0">
+            {results.length > 0 ? (
+              results.map((song) => (
+                <button
+                  key={song.id}
+                  onClick={() => handleOpenTrimmer(song)}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors border-b last:border-b-0 text-left"
+                >
+                  {song.thumbnail ? (
+                    <Image
+                      src={song.thumbnail}
+                      alt={song.title}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                      <Music className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium">{song.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {song.artist}
+                    </p>
+                  </div>
+                  {song.videoId && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handlePlayPreview(e, song)}
+                      className="h-8 w-8 flex-shrink-0"
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                  )}
+                </button>
+              ))
+            ) : (
+              !loading && suggestions.length > 0 ? (
+                <div className="p-2">
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setQuery(suggestion)}
+                      className="w-full px-4 py-2 text-left hover:bg-muted rounded"
+                    >
+                      <span className="text-muted-foreground">{suggestion}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null
+            )}
+            {!loading && results.length === 0 && query.length > 0 && (
+              <div className="px-4 py-8 text-center text-muted-foreground">
+                No songs found.
+              </div>
+            )}
+          </Card>
+        )}
+      </div>
+
+      {showTrimmer && songToTrim && (
+        <AudioTrimmer
+          songId={songToTrim.videoId!}
+          songTitle={songToTrim.title}
+          onSelectSegment={handleSegmentSelected}
+          onClose={() => {
+            setShowTrimmer(false);
+            setSongToTrim(null);
+          }}
+        />
       )}
-    </div>
+    </>
   );
 }

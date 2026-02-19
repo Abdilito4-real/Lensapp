@@ -8,6 +8,8 @@ export interface Song {
   album?: string;
   thumbnail?: string;
   duration?: number;
+  startTime?: number;
+  endTime?: number;
 }
 
 export interface SearchResponse {
