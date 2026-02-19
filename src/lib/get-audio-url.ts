@@ -2,12 +2,16 @@ const PIPED_INSTANCES = [
   'https://pipedapi.kavin.rocks',
   'https://pipedapi.adminforge.de',
   'https://piped-api.garudalinux.org',
+  'https://pipedapi.drgns.space',
+  'https://api.piped.projectsegfau.lt',
 ];
 
 const INVIDIOUS_INSTANCES = [
   'https://invidious.nerdvpn.de',
   'https://invidious.privacydev.net',
   'https://yt.cdaut.de',
+  'https://invidious.lunar.icu',
+  'https://iv.ggtyler.dev',
 ];
 
 export async function getAudioUrl(videoId: string): Promise<string> {
