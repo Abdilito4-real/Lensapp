@@ -49,6 +49,7 @@ type EmojiElement = {
   id: number;
   content: string;
   position: { x: number; y: number };
+  size: number;
 };
 
 const initialFilters = {
@@ -111,9 +112,11 @@ const DraggableText = ({
 const DraggableEmoji = ({
   emoji,
   onDragStop,
+  onDoubleClick,
 }: {
   emoji: EmojiElement;
   onDragStop: (e: any, data: { x: number; y: number }) => void;
+  onDoubleClick: (e: React.MouseEvent) => void;
 }) => {
   const nodeRef = useRef(null);
   return (
@@ -125,10 +128,12 @@ const DraggableEmoji = ({
     >
       <div
         ref={nodeRef}
-        className="absolute cursor-move p-2 text-5xl"
+        className="absolute cursor-move p-2"
         style={{
+          fontSize: `${emoji.size}px`,
           textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
         }}
+        onDoubleClick={onDoubleClick}
       >
         {emoji.content}
       </div>
@@ -154,13 +159,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [isMusicSearchOpen, setIsMusicSearchOpen] = useState(false);
 
   const [filters, setFilters] = useState(initialFilters);
-  const [editPanel, setEditPanel] = useState<'filters' | 'text' | null>(null);
+  const [editPanel, setEditPanel] = useState<'filters' | 'text' | 'emoji' | null>(null);
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
 
   const [texts, setTexts] = useState<TextElement[]>([]);
   const [emojis, setEmojis] = useState<EmojiElement[]>([]);
   const [activeTextId, setActiveTextId] = useState<number | null>(null);
+  const [activeEmojiId, setActiveEmojiId] = useState<number | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -238,6 +244,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setTexts([]);
     setEmojis([]);
     setActiveTextId(null);
+    setActiveEmojiId(null);
     setStage('select');
     stopCamera();
     setIsCropping(false);
@@ -279,7 +286,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     ctx.filter = 'none';
 
     emojis.forEach(emoji => {
-      const fontSize = 48 * Math.min(scaleX, scaleY);
+      const fontSize = emoji.size * Math.min(scaleX, scaleY);
       ctx.font = `${fontSize}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -289,10 +296,10 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       ctx.shadowOffsetY = 2 * Math.min(scaleX, scaleY);
       ctx.shadowBlur = 4 * Math.min(scaleX, scaleY);
       
-      const emojiX = (emoji.position.x + previewWidth / 2) * scaleX;
-      const emojiY = (emoji.position.y + 30) * scaleY;
+      const emojiCenterX = (emoji.position.x + (emoji.size / 2) + 8) * scaleX;
+      const emojiCenterY = (emoji.position.y + (emoji.size / 2) + 8) * scaleY;
       
-      ctx.fillText(emoji.content, emojiX, emojiY);
+      ctx.fillText(emoji.content, emojiCenterX, emojiCenterY);
     });
 
     texts.forEach(text => {
@@ -412,6 +419,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         fontFamily: 'Inter',
       },
     ]);
+    setActiveEmojiId(null);
     setActiveTextId(newId);
     setEditPanel('text');
     setIsEditPopoverOpen(true);
@@ -450,12 +458,27 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         id: newId,
         content: emoji,
         position: { x: 0, y: 0 },
+        size: 48,
       },
     ]);
   };
 
   const handleEmojiDragStop = (id: number, data: { x: number; y: number }) => {
     setEmojis(emojis.map(e => (e.id === id ? { ...e, position: { ...data } } : e)));
+  };
+
+  const handleEmojiSizeChange = (value: number[]) => {
+    if (!activeEmojiId) return;
+    setEmojis(
+      emojis.map(e => (e.id === activeEmojiId ? { ...e, size: value[0] } : e))
+    );
+  };
+
+  const handleDeleteEmoji = () => {
+    if (!activeEmojiId) return;
+    setEmojis(emojis.filter(e => e.id !== activeEmojiId));
+    setActiveEmojiId(null);
+    setIsEditPopoverOpen(false);
   };
 
   useEffect(() => {
@@ -475,6 +498,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   }, [selectedSong]);
 
   const activeText = texts.find(t => t.id === activeTextId);
+  const activeEmoji = emojis.find(e => e.id === activeEmojiId);
 
   if (stage === 'preview' && imagePreview) {
     return (
@@ -494,7 +518,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               
               <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => { setEditPanel('filters'); setActiveTextId(null); }}>
+                    <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => { setEditPanel('filters'); setActiveTextId(null); setActiveEmojiId(null); }}>
                         <SlidersHorizontal className="h-5 w-5" />
                     </Button>
                 </PopoverTrigger>
@@ -545,6 +569,27 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                         </div>
                       </div>
                       <Button onClick={() => setIsEditPopoverOpen(false)}>OK</Button>
+                    </div>
+                  ) : editPanel === 'emoji' && activeEmoji ? (
+                    <div className="grid gap-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="font-medium leading-none">Edit Emoji</h4>
+                            <Button variant="ghost" size="icon" onClick={handleDeleteEmoji} className="text-destructive h-8 w-8">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="emoji-size">Size</Label>
+                            <Slider
+                                id="emoji-size"
+                                value={[activeEmoji.size]}
+                                min={12}
+                                max={128}
+                                step={1}
+                                onValueChange={handleEmojiSizeChange}
+                            />
+                        </div>
+                        <Button onClick={() => setIsEditPopoverOpen(false)}>OK</Button>
                     </div>
                   ) : (
                     <div className="grid gap-4">
@@ -628,7 +673,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Redo feature coming soon!"})}><Redo className="h-5 w-5" /></Button>
           </div>
 
-          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setIsEditPopoverOpen(false);}}>
+          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); setIsEditPopoverOpen(false);}}>
               <Image 
                 src={imagePreview} 
                 alt="Submission preview" 
@@ -645,6 +690,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                   key={emoji.id}
                   emoji={emoji}
                   onDragStop={(_, data) => handleEmojiDragStop(emoji.id, data)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTextId(null);
+                    setActiveEmojiId(emoji.id);
+                    setEditPanel('emoji');
+                    setIsEditPopoverOpen(true);
+                  }}
                 />
               ))}
 
@@ -656,6 +708,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                   onDragStop={(_, data) => handleDragStop(text.id, data)}
                   onDoubleClick={(e) => {
                     e.stopPropagation();
+                    setActiveEmojiId(null);
                     setActiveTextId(text.id);
                     setEditPanel('text');
                     setIsEditPopoverOpen(true);
