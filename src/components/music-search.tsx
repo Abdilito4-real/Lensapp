@@ -36,12 +36,12 @@ export function MusicSearch({ onSelectSong, selectedSong, className = '' }: Musi
       setLoading(true);
       try {
         const response = await axios.get(
-          `https://verome-api.deno.dev/api/search?q=${encodeURIComponent(searchQuery)}&filter=songs`
+          `https://verome-api.deno.dev/api/search?q=${encodeURIComponent(
+            searchQuery
+          )}&filter=songs`
         );
         const data = response.data;
-        // The API returns an object that contains the song list, not an array directly.
-        const songList = Array.isArray(data) ? data : data.data || [];
-        const formattedSongs = songList.map((item: any) => ({
+        const formattedSongs = data.data.map((item: any) => ({
           id: item.id,
           name: item.title,
           artist: item.artist,
