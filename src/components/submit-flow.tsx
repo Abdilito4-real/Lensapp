@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent, useEffect } from 'react';
+import { useState, useRef, type ChangeEvent, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Upload,
@@ -56,6 +56,12 @@ const initialFilters = {
   brightness: 100,
   contrast: 100,
   saturate: 100,
+};
+
+type EditorState = {
+  filters: typeof initialFilters;
+  texts: TextElement[];
+  emojis: EmojiElement[];
 };
 
 const fonts = [
@@ -169,14 +175,62 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [activeEmojiId, setActiveEmojiId] = useState<number | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
+  const [history, setHistory] = useState<EditorState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const recordHistory = (newState: EditorState) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length);
+  };
+  
+  const handleUndo = () => {
+    if (historyIndex <= 0) return;
+
+    const newIndex = historyIndex - 1;
+    setHistoryIndex(newIndex);
+    const prevState = history[newIndex];
+    if (prevState) {
+      setFilters(prevState.filters);
+      setTexts(prevState.texts);
+      setEmojis(prevState.emojis);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex >= history.length - 1) return;
+
+    const newIndex = historyIndex + 1;
+    setHistoryIndex(newIndex);
+    const nextState = history[newIndex];
+    if (nextState) {
+      setFilters(nextState.filters);
+      setTexts(nextState.texts);
+      setEmojis(nextState.emojis);
+    }
+  };
+
+  const enterPreviewStage = (imageUrl: string, file: File) => {
+    setImagePreview(imageUrl);
+    setImageFile(file);
+    setStage('preview');
+    
+    // Reset and initialize history
+    const initialState: EditorState = { filters: initialFilters, texts: [], emojis: [] };
+    setHistory([initialState]);
+    setHistoryIndex(0);
+    setFilters(initialState.filters);
+    setTexts(initialState.texts);
+    setEmojis(initialState.emojis);
+  }
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setStage('preview');
+        enterPreviewStage(reader.result as string, file);
       };
       reader.readAsDataURL(file);
     }
@@ -214,14 +268,12 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       if (context) {
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         const dataUrl = canvas.toDataURL('image/jpeg');
-        setImagePreview(dataUrl);
         canvas.toBlob(blob => {
           if (blob) {
             const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-            setImageFile(file);
+            enterPreviewStage(dataUrl, file);
           }
         }, 'image/jpeg');
-        setStage('preview');
         stopCamera();
       }
     }
@@ -245,6 +297,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setEmojis([]);
     setActiveTextId(null);
     setActiveEmojiId(null);
+    setHistory([]);
+    setHistoryIndex(-1);
     setStage('select');
     stopCamera();
     setIsCropping(false);
@@ -379,7 +433,11 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsMusicSearchOpen(false);
   }
   
-  const handleResetFilters = () => setFilters(initialFilters);
+  const handleResetFilters = () => {
+    const newFilters = initialFilters;
+    setFilters(newFilters);
+    recordHistory({ filters: newFilters, texts, emojis });
+  }
   
   const handleCropComplete = async (croppedImageSrc: string) => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
@@ -403,22 +461,35 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
             description: 'There was an issue processing the cropped image.',
         });
     }
+
+    // After cropping, reset history as overlays/filters might not map correctly.
+    const initialState: EditorState = { filters: initialFilters, texts: [], emojis: [] };
+    setHistory([initialState]);
+    setHistoryIndex(0);
+    setFilters(initialState.filters);
+    setTexts(initialState.texts);
+    setEmojis(initialState.emojis);
     
     setIsCropping(false);
+    toast({
+        title: 'Crop Applied',
+        description: 'Undo/Redo history has been reset.',
+    });
 };
 
   const handleAddText = () => {
     const newId = Date.now();
-    setTexts(texts => [
-      ...texts,
-      {
-        id: newId,
-        content: 'Your Text',
-        position: { x: 0, y: 0 },
-        color: '#FFFFFF',
-        fontFamily: 'Inter',
-      },
-    ]);
+    const newText: TextElement = {
+      id: newId,
+      content: 'Your Text',
+      position: { x: 0, y: 0 },
+      color: '#FFFFFF',
+      fontFamily: 'Inter',
+    };
+    const newTexts = [...texts, newText];
+    setTexts(newTexts);
+    recordHistory({ filters, texts: newTexts, emojis });
+
     setActiveEmojiId(null);
     setActiveTextId(newId);
     setEditPanel('text');
@@ -430,7 +501,9 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
 
   const handleDragStop = (id: number, data: { x: number; y: number }) => {
-    setTexts(texts.map(t => (t.id === id ? { ...t, position: { ...data } } : t)));
+    const newTexts = texts.map(t => (t.id === id ? { ...t, position: { ...data } } : t));
+    setTexts(newTexts);
+    recordHistory({ filters, texts: newTexts, emojis });
   };
   
   const handleTextColorChange = (color: string) => {
@@ -445,26 +518,31 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const handleDeleteText = () => {
     if (!activeTextId) return;
-    setTexts(texts.filter(t => t.id !== activeTextId));
+    const newTexts = texts.filter(t => t.id !== activeTextId);
+    setTexts(newTexts);
+    recordHistory({ filters, texts: newTexts, emojis });
+
     setActiveTextId(null);
     setIsEditPopoverOpen(false);
   };
 
   const handleAddEmoji = (emoji: string) => {
     const newId = Date.now();
-    setEmojis(emojis => [
-      ...emojis,
-      {
-        id: newId,
-        content: emoji,
-        position: { x: 0, y: 0 },
-        size: 48,
-      },
-    ]);
+    const newEmoji: EmojiElement = {
+      id: newId,
+      content: emoji,
+      position: { x: 0, y: 0 },
+      size: 48,
+    };
+    const newEmojis = [...emojis, newEmoji];
+    setEmojis(newEmojis);
+    recordHistory({ filters, texts, emojis: newEmojis });
   };
 
   const handleEmojiDragStop = (id: number, data: { x: number; y: number }) => {
-    setEmojis(emojis.map(e => (e.id === id ? { ...e, position: { ...data } } : e)));
+    const newEmojis = emojis.map(e => (e.id === id ? { ...e, position: { ...data } } : e));
+    setEmojis(newEmojis);
+    recordHistory({ filters, texts, emojis: newEmojis });
   };
 
   const handleEmojiSizeChange = (value: number[]) => {
@@ -476,9 +554,21 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const handleDeleteEmoji = () => {
     if (!activeEmojiId) return;
-    setEmojis(emojis.filter(e => e.id !== activeEmojiId));
+    const newEmojis = emojis.filter(e => e.id !== activeEmojiId);
+    setEmojis(newEmojis);
+    recordHistory({ filters, texts, emojis: newEmojis });
+
     setActiveEmojiId(null);
     setIsEditPopoverOpen(false);
+  };
+  
+  const handlePopoverClose = () => {
+    if (isEditPopoverOpen) {
+      recordHistory({ filters, texts, emojis });
+    }
+    setIsEditPopoverOpen(false);
+    setActiveTextId(null);
+    setActiveEmojiId(null);
   };
 
   useEffect(() => {
@@ -516,9 +606,9 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsMusicSearchOpen(true)}><Music className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsCropping(true)}><Crop className="h-5 w-5" /></Button>
               
-              <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
+              <Popover open={isEditPopoverOpen} onOpenChange={handlePopoverClose}>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => { setEditPanel('filters'); setActiveTextId(null); setActiveEmojiId(null); }}>
+                    <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => { setEditPanel('filters'); setActiveTextId(null); setActiveEmojiId(null); setIsEditPopoverOpen(true)}}>
                         <SlidersHorizontal className="h-5 w-5" />
                     </Button>
                 </PopoverTrigger>
@@ -587,6 +677,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                                 max={128}
                                 step={1}
                                 onValueChange={handleEmojiSizeChange}
+                                onValueCommit={() => recordHistory({ filters, texts, emojis })}
                             />
                         </div>
                         <Button onClick={() => setIsEditPopoverOpen(false)}>OK</Button>
@@ -614,6 +705,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                                     max={200}
                                     step={1}
                                     onValueChange={(value) => setFilters(f => ({ ...f, brightness: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, brightness: value[0] }, texts, emojis })}
                                     className="col-span-3"
                                 />
                                 <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.brightness}%</span>
@@ -626,6 +718,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                                     max={200}
                                     step={1}
                                     onValueChange={(value) => setFilters(f => ({ ...f, contrast: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, contrast: value[0] }, texts, emojis })}
                                     className="col-span-3"
                                 />
                                 <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.contrast}%</span>
@@ -638,6 +731,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                                     max={200}
                                     step={1}
                                     onValueChange={(value) => setFilters(f => ({ ...f, saturate: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, saturate: value[0] }, texts, emojis })}
                                     className="col-span-3"
                                 />
                                 <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.saturate}%</span>
@@ -669,11 +763,11 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                   </div>
                 </PopoverContent>
               </Popover>
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Undo feature coming soon!"})}><Undo className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Redo feature coming soon!"})}><Redo className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleUndo} disabled={historyIndex <= 0}><Undo className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="h-5 w-5" /></Button>
           </div>
 
-          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); setIsEditPopoverOpen(false);}}>
+          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); handlePopoverClose();}}>
               <Image 
                 src={imagePreview} 
                 alt="Submission preview" 
