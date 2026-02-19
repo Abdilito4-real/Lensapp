@@ -45,6 +45,12 @@ type TextElement = {
   fontFamily: string;
 };
 
+type EmojiElement = {
+  id: number;
+  content: string;
+  position: { x: number; y: number };
+};
+
 const initialFilters = {
   brightness: 100,
   contrast: 100,
@@ -59,6 +65,8 @@ const fonts = [
 ];
 
 const textColors = [ '#FFFFFF', '#000000', '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899' ];
+
+const emojiList = ['😀', '😂', '😍', '🤔', '🎉', '🔥', '❤️', '👍', '💯', '✨', '🙏', '😎'];
 
 const DraggableText = ({
   text,
@@ -100,6 +108,33 @@ const DraggableText = ({
   );
 };
 
+const DraggableEmoji = ({
+  emoji,
+  onDragStop,
+}: {
+  emoji: EmojiElement;
+  onDragStop: (e: any, data: { x: number; y: number }) => void;
+}) => {
+  const nodeRef = useRef(null);
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      position={emoji.position}
+      onStop={onDragStop}
+      bounds="parent"
+    >
+      <div
+        ref={nodeRef}
+        className="absolute cursor-move p-2 text-5xl"
+        style={{
+          textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+        }}
+      >
+        {emoji.content}
+      </div>
+    </Draggable>
+  );
+};
 
 export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [stage, setStage] = useState<Stage>('select');
@@ -124,6 +159,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [isCropping, setIsCropping] = useState(false);
 
   const [texts, setTexts] = useState<TextElement[]>([]);
+  const [emojis, setEmojis] = useState<EmojiElement[]>([]);
   const [activeTextId, setActiveTextId] = useState<number | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
@@ -200,6 +236,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setSelectedSong(null);
     setFilters(initialFilters);
     setTexts([]);
+    setEmojis([]);
     setActiveTextId(null);
     setStage('select');
     stopCamera();
@@ -241,6 +278,23 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     ctx.drawImage(image, 0, 0);
     ctx.filter = 'none';
 
+    emojis.forEach(emoji => {
+      const fontSize = 48 * Math.min(scaleX, scaleY);
+      ctx.font = `${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowOffsetX = 2 * Math.min(scaleX, scaleY);
+      ctx.shadowOffsetY = 2 * Math.min(scaleX, scaleY);
+      ctx.shadowBlur = 4 * Math.min(scaleX, scaleY);
+      
+      const emojiX = (emoji.position.x + previewWidth / 2) * scaleX;
+      const emojiY = (emoji.position.y + 30) * scaleY;
+      
+      ctx.fillText(emoji.content, emojiX, emojiY);
+    });
+
     texts.forEach(text => {
         const fontSize = 32 * Math.min(scaleX, scaleY);
         const genericFamily = fonts.find(f => f.name === text.fontFamily)?.family || 'sans-serif';
@@ -255,7 +309,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         ctx.shadowBlur = 4 * Math.min(scaleX, scaleY);
         
         const textX = (text.position.x + previewWidth / 2) * scaleX;
-        const textY = (text.position.y + previewHeight / 2) * scaleY;
+        const textY = (text.position.y + 32) * scaleY;
         
         ctx.fillText(text.content, textX, textY);
     });
@@ -388,6 +442,22 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setTexts(texts.filter(t => t.id !== activeTextId));
     setActiveTextId(null);
     setIsEditPopoverOpen(false);
+  };
+
+  const handleAddEmoji = (emoji: string) => {
+    const newId = Date.now();
+    setEmojis(emojis => [
+      ...emojis,
+      {
+        id: newId,
+        content: emoji,
+        position: { x: 0, y: 0 },
+      },
+    ]);
+  };
+
+  const handleEmojiDragStop = (id: number, data: { x: number; y: number }) => {
+    setEmojis(emojis.map(e => (e.id === id ? { ...e, position: { ...data } } : e)));
   };
 
   useEffect(() => {
@@ -536,7 +606,26 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               </Popover>
               
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleAddText}><Type className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Emoji feature coming soon!"})}><Smile className="h-5 w-5" /></Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-auto p-2">
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-2">
+                  <div className="grid grid-cols-5 gap-2">
+                    {emojiList.map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleAddEmoji(emoji)}
+                        className="text-2xl rounded-md p-1 hover:bg-muted transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Undo feature coming soon!"})}><Undo className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Redo feature coming soon!"})}><Redo className="h-5 w-5" /></Button>
           </div>
@@ -553,6 +642,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 }}
               />
               
+              {emojis.map((emoji) => (
+                <DraggableEmoji
+                  key={emoji.id}
+                  emoji={emoji}
+                  onDragStop={(_, data) => handleEmojiDragStop(emoji.id, data)}
+                />
+              ))}
+
               {texts.map((text) => (
                 <DraggableText
                   key={text.id}
