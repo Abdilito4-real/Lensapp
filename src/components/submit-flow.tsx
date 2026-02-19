@@ -370,9 +370,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const handleDragStop = (id: number, data: { x: number; y: number }) => {
     setTexts(texts.map(t => (t.id === id ? { ...t, position: { ...data } } : t)));
-    setActiveTextId(id);
-    setEditPanel('text');
-    setIsEditPopoverOpen(true);
   };
   
   const handleTextColorChange = (color: string) => {
