@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { LensLoader } from './lens-loader';
 import { Pause, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getAudioUrl } from '@/lib/get-audio-url';
 
 interface AudioTrimmerProps {
   songId: string;
@@ -40,11 +41,12 @@ export function AudioTrimmer({
     const loadAudio = async () => {
       setIsLoading(true);
       try {
-        const streamUrl = `/api/stream-proxy?videoId=${songId}`;
+        const audioUrl = await getAudioUrl(songId);
+        const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
 
         const sound = new Howl({
           src: [streamUrl],
-          format: ['webm', 'm4a'],
+          format: ['webm', 'm4a', 'mp4'],
           html5: true,
           onload: () => {
             const soundDuration = sound.duration();

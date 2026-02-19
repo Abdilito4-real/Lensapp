@@ -25,7 +25,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { MusicSearch } from './music-search';
 import type { Song } from '@/lib/musicService';
-import { musicService } from '@/lib/musicService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -38,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { AudioTrimmer } from './audio-trimmer';
 import { LensLoader } from './lens-loader';
 import { Howl } from 'howler';
+import { getAudioUrl } from '@/lib/get-audio-url';
 
 type Stage = 'select' | 'preview';
 
@@ -432,21 +432,17 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }
 
     setIsMusicSearchOpen(false);
-    setIsSongLoading(true);
     setSelectedSong(song);
+    setIsSongLoading(true);
 
-    musicService.getStreamUrl(song.videoId).then((url) => {
+    getAudioUrl(song.videoId).then((audioUrl) => {
       if (!isMountedRef.current) return;
-      if (!url) {
-        toast({ variant: 'destructive', title: 'Could not load audio.' });
-        setIsSongLoading(false);
-        setSelectedSong(null);
-        return;
-      }
+
+      const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
 
       const sound = new Howl({
-        src: [url],
-        format: ['mp3', 'aac', 'm4a'],
+        src: [streamUrl],
+        format: ['webm', 'm4a', 'mp4'],
         html5: true,
         onplay: () => {
           if (isMountedRef.current) setIsPlaying(true);
@@ -477,13 +473,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
             }
         },
         onloaderror: (id, error) => {
-          const messages: Record<number, string> = {
-            1: 'MEDIA_ERR_ABORTED',
-            2: 'MEDIA_ERR_NETWORK',
-            3: 'MEDIA_ERR_DECODE',
-            4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
-          };
-          console.error('Howl load error:', messages[error as number] ?? error, '| URL:', url);
+          console.error('Howl load error:', error, '| URL:', streamUrl);
           if (isMountedRef.current) {
             toast({ variant: 'destructive', title: 'Failed to load song.' });
             setIsSongLoading(false);
@@ -501,6 +491,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       });
       
       audioRef.current = sound;
+    }).catch((error) => {
+        console.error("Failed to get audio URL:", error);
+        if (isMountedRef.current) {
+          toast({ variant: 'destructive', title: 'Failed to load song.' });
+          setIsSongLoading(false);
+          setSelectedSong(null);
+        }
     });
   };
 

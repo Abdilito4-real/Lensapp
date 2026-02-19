@@ -12,6 +12,7 @@ import { Search, Music, Play, Pause } from 'lucide-react';
 import { LensLoader } from './lens-loader';
 import { useToast } from '@/hooks/use-toast';
 import { Howl } from 'howler';
+import { getAudioUrl } from '@/lib/get-audio-url';
 
 interface MusicSearchProps {
   onSelectSong: (song: Song | null) => void;
@@ -102,13 +103,13 @@ export function MusicSearch({
     setPreviewingSongId(song.id);
 
     try {
-      const streamUrl = await musicService.getStreamUrl(song.videoId);
-      if (!streamUrl) throw new Error('No stream URL');
+      const audioUrl = await getAudioUrl(song.videoId);
+      const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
 
       const sound = new Howl({
         src: [streamUrl],
-        format: ['webm', 'm4a'], // Allow common formats
-        html5: true, // Use HTML5 Audio to avoid WebAudio CORS issues
+        format: ['webm', 'm4a', 'mp4'],
+        html5: true,
         volume: 0.5,
         onplay: () => {
              // Stop after 7 seconds

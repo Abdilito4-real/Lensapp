@@ -9,9 +9,9 @@ import { submissions } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import type { Song } from '@/lib/musicService';
-import { musicService } from '@/lib/musicService';
 import { useToast } from '@/hooks/use-toast';
 import { Howl } from 'howler';
+import { getAudioUrl } from '@/lib/get-audio-url';
 
 export default function VotePage() {
   const [voted, setVoted] = useState<Record<string, boolean>>({});
@@ -41,15 +41,12 @@ export default function VotePage() {
         stopPlayback(); // Stop any currently playing song
         
         try {
-            const streamUrl = await musicService.getStreamUrl(song.videoId);
-            if (!streamUrl) {
-                toast({ variant: 'destructive', title: 'Could not play preview.' });
-                return;
-            }
+            const audioUrl = await getAudioUrl(song.videoId);
+            const streamUrl = `/api/stream-proxy?url=${encodeURIComponent(audioUrl)}`;
 
             const sound = new Howl({
                 src: [streamUrl],
-                format: ['mp3', 'aac', 'm4a'],
+                format: ['webm', 'm4a', 'mp4'],
                 html5: true,
                 onplay: () => {
                     setPlayingSong(submissionId);

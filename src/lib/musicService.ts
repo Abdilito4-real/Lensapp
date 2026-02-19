@@ -68,14 +68,6 @@ class MusicService {
   }
 
   /**
-   * Get streaming URL for a song
-   */
-  async getStreamUrl(videoId: string): Promise<string | null> {
-    // Simply return the proxy endpoint URL – the actual audio will be fetched from our own domain
-    return `/api/stream-proxy?videoId=${videoId}`;
-  }
-
-  /**
    * Get song details
    */
   async getSongDetails(videoId: string): Promise<Song | null> {
