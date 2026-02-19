@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
-import { Search, Music, Play } from 'lucide-react';
+import { Search, Music, Play, Pause } from 'lucide-react';
 import { LensLoader } from './lens-loader';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,6 +28,10 @@ export function MusicSearch({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const [previewingSongId, setPreviewingSongId] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const searchSongs = useCallback(
     debounce(async (searchQuery: string) => {
@@ -69,16 +73,29 @@ export function MusicSearch({
     []
   );
 
+  const stopPreview = useCallback(() => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    setPreviewingSongId(null);
+  }, []);
+
   useEffect(() => {
     searchSongs(query);
     fetchSuggestions(query);
     return () => {
       searchSongs.clear();
       fetchSuggestions.clear();
+      stopPreview();
     };
-  }, [query, searchSongs, fetchSuggestions]);
+  }, [query, searchSongs, fetchSuggestions, stopPreview]);
 
   const handleSelectSong = (song: Song) => {
+    stopPreview();
     const startTime = 0;
     let endTime = 20;
 
@@ -98,19 +115,44 @@ export function MusicSearch({
     e.stopPropagation();
     if (!song.videoId) return;
 
+    if (previewingSongId === song.id) {
+      stopPreview();
+      return;
+    }
+
+    stopPreview(); // Stop any other preview
+
     try {
+      setPreviewingSongId(song.id);
       const streamUrl = await musicService.getStreamUrl(song.videoId);
+
       if (streamUrl) {
         const audio = new Audio(streamUrl);
+        previewAudioRef.current = audio;
         audio.volume = 0.5;
-        audio.play().catch(err => toast({ variant: 'destructive', title: 'Could not play preview.' }));
-        setTimeout(() => audio.pause(), 5000); // Preview for 5 seconds
+        
+        const onEnd = () => {
+          if (previewAudioRef.current === audio) {
+            stopPreview();
+          }
+        };
+        audio.addEventListener('ended', onEnd);
+        audio.addEventListener('pause', onEnd);
+
+        await audio.play();
+        
+        previewTimeoutRef.current = setTimeout(() => {
+            onEnd();
+        }, 7000); // 7-second preview
+
       } else {
         toast({ variant: 'destructive', title: 'Could not play preview.' });
+        stopPreview();
       }
     } catch (error) {
       console.error('Preview failed:', error);
       toast({ variant: 'destructive', title: 'Could not play preview.' });
+      stopPreview();
     }
   };
 
@@ -170,7 +212,7 @@ export function MusicSearch({
                       className="h-8 w-8 flex-shrink-0"
                       aria-label="Preview song"
                     >
-                      <Play className="h-4 w-4" />
+                      {previewingSongId === song.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </Button>
                   )}
                 </button>
