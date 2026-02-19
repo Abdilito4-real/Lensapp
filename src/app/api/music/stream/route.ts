@@ -1,35 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const BASE_URL = 'https://verome-api.deno.dev';
+
 export async function GET(request: NextRequest) {
   const videoId = request.nextUrl.searchParams.get('videoId');
   
   if (!videoId) {
-    return NextResponse.json({ error: 'videoId required' }, { status: 400 });
+    return NextResponse.json({ error: 'videoId is required' }, { status: 400 });
   }
 
   try {
-    const response = await fetch(`https://pipedapi.kavin.rocks/streams/${videoId}`);
+    // The verome API uses 'id' for the video ID in the stream endpoint
+    const apiUrl = `${BASE_URL}/api/stream?id=${encodeURIComponent(videoId)}`;
+    const response = await fetch(apiUrl);
+
     if (!response.ok) {
-        throw new Error(`Failed to fetch stream from piped: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`Failed to fetch from verome stream API (${apiUrl}): ${response.status}`, errorText);
+        throw new Error(`Failed to fetch from verome stream API: ${response.statusText}`);
     }
+    
+    // Assuming the API returns a JSON object with a 'url' property, which we will just forward.
     const data = await response.json();
     
-    // Find the best audio stream (m4a, highest quality)
-    const audioStream = data.audioStreams
-        .filter((s: any) => s.mimeType === 'audio/mp4')
-        .sort((a: any, b: any) => b.bitrate - a.bitrate)[0];
-
-    if (!audioStream?.url) {
-        // Fallback to any other audio stream if m4a is not available
-        const fallbackStream = data.audioStreams.sort((a: any, b: any) => b.bitrate - a.bitrate)[0];
-        if (!fallbackStream?.url) {
-            throw new Error('No suitable audio stream found.');
-        }
-        return NextResponse.json({ url: fallbackStream.url });
-    }
-    
-    // Return the stream URL in the expected format
-    return NextResponse.json({ url: audioStream.url });
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Stream proxy error:', error);
     return NextResponse.json({ error: 'Failed to get stream' }, { status: 500 });
