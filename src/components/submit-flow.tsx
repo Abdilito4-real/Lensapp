@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, type ChangeEvent, useEffect, useCallback } from 'react';
@@ -385,42 +386,29 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   }
 
   const togglePlayback = async () => {
-    if (!selectedSong || !selectedSong.videoId) return;
+    if (!selectedSong || !selectedSong.videoId || !audioRef.current) return;
 
-    if (isPlaying && audioRef.current) {
+    if (isPlaying) {
       audioRef.current.pause();
     } else {
       try {
-        if (!audioRef.current || !audioRef.current.src.includes(selectedSong.videoId)) {
-            const streamUrl = await musicService.getStreamUrl(selectedSong.videoId);
-            if (streamUrl) {
-                if (audioRef.current) audioRef.current.pause();
-                audioRef.current = new Audio(streamUrl);
-                const onEnd = () => {
-                    setIsPlaying(false);
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                };
-                audioRef.current.onpause = onEnd;
-                audioRef.current.onended = onEnd;
-            } else {
-                toast({ variant: 'destructive', title: 'Could not play preview.' });
-                return;
-            }
+        if (audioRef.current.ended) {
+          audioRef.current.currentTime = selectedSong.startTime || 0;
         }
-        
-        const { startTime = 0, endTime } = selectedSong;
-        audioRef.current.currentTime = startTime;
         await audioRef.current.play();
         setIsPlaying(true);
 
-        if (endTime) {
-            const duration = (endTime - startTime) * 1000;
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        if (selectedSong.endTime) {
+          const duration = (selectedSong.endTime - audioRef.current.currentTime) * 1000;
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+          if (duration > 0) {
             timeoutRef.current = setTimeout(() => {
-            audioRef.current?.pause();
+              audioRef.current?.pause();
             }, duration);
+          } else {
+            audioRef.current?.pause();
+          }
         }
-
       } catch (error) {
         console.error("Playback failed:", error);
         toast({ variant: 'destructive', title: 'Could not play preview.' });
@@ -429,9 +417,61 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
 
   const handleSongSelected = (song: Song | null) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsPlaying(false);
+
     setSelectedSong(song);
     setIsMusicSearchOpen(false);
-  }
+
+    if (song?.videoId) {
+      const playSong = async () => {
+        try {
+          const streamUrl = await musicService.getStreamUrl(song.videoId!);
+          if (streamUrl) {
+            audioRef.current = new Audio(streamUrl);
+            const onEnd = () => {
+              setIsPlaying(false);
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            };
+            audioRef.current.onpause = onEnd;
+            audioRef.current.onended = onEnd;
+
+            const { startTime = 0, endTime } = song;
+            audioRef.current.currentTime = startTime;
+            await audioRef.current.play();
+            setIsPlaying(true);
+
+            if (endTime) {
+              const duration = (endTime - startTime) * 1000;
+              timeoutRef.current = setTimeout(() => {
+                audioRef.current?.pause();
+              }, duration);
+            }
+          } else {
+            toast({ variant: 'destructive', title: 'Could not play preview.' });
+          }
+        } catch (error) {
+          console.error('Playback failed:', error);
+          toast({ variant: 'destructive', title: 'Could not play preview.' });
+        }
+      };
+      playSong();
+    }
+  };
+  
+  const handleRemoveSong = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsPlaying(false);
+    setSelectedSong(null);
+  };
   
   const handleResetFilters = () => {
     const newFilters = initialFilters;
@@ -842,7 +882,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setSelectedSong(null)}
+                                onClick={handleRemoveSong}
                                 className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
                             >
                                 <X className="h-4 w-4" />
