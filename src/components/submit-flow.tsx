@@ -66,7 +66,7 @@ const fonts = [
 
 const textColors = [ '#FFFFFF', '#000000', '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899' ];
 
-const emojiList = ['😀', '😂', '😍', '🤔', '🎉', '🔥', '❤️', '👍', '💯', '✨', '🙏', '😎', '😢', '😱', '🤩', '🥳', '🤯', '🙌', '👀', '💀'];
+const emojiList = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '👏', '🙌', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🦷', '🦴', '👀', '👁', '👅', '👄', '❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '💥', '💫', '💦', '💨'];
 
 const DraggableText = ({
   text,
@@ -610,13 +610,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                     <Smile className="h-5 w-5" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-2">
-                  <div className="grid grid-cols-5 gap-2">
+                <PopoverContent className="w-80 max-h-60 overflow-y-auto p-2">
+                  <div className="grid grid-cols-8 gap-1">
                     {emojiList.map(emoji => (
                       <button
                         key={emoji}
                         onClick={() => handleAddEmoji(emoji)}
-                        className="text-2xl rounded-md p-1 hover:bg-muted transition-colors"
+                        className="text-xl rounded-md p-1 hover:bg-muted transition-colors"
                       >
                         {emoji}
                       </button>
