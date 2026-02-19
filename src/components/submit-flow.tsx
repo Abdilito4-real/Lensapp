@@ -477,7 +477,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
             }
         },
         onloaderror: (id, error) => {
-          console.error('Howl load error:', error);
+          const messages: Record<number, string> = {
+            1: 'MEDIA_ERR_ABORTED',
+            2: 'MEDIA_ERR_NETWORK',
+            3: 'MEDIA_ERR_DECODE',
+            4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
+          };
+          console.error('Howl load error:', messages[error as number] ?? error, '| URL:', url);
           if (isMountedRef.current) {
             toast({ variant: 'destructive', title: 'Failed to load song.' });
             setIsSongLoading(false);

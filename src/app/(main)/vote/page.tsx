@@ -11,11 +11,12 @@ import { cn } from '@/lib/utils';
 import type { Song } from '@/lib/musicService';
 import { musicService } from '@/lib/musicService';
 import { useToast } from '@/hooks/use-toast';
+import { Howl } from 'howler';
 
 export default function VotePage() {
   const [voted, setVoted] = useState<Record<string, boolean>>({});
   const [playingSong, setPlayingSong] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<Howl | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -23,49 +24,83 @@ export default function VotePage() {
     setVoted(prev => ({ ...prev, [submissionId]: !prev[submissionId] }));
   };
 
+  const stopPlayback = () => {
+    audioRef.current?.unload();
+    if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+    }
+    setPlayingSong(null);
+  }
+
   const togglePreview = async (submissionId: string, song: Song) => {
     if (!song.videoId) return;
 
     if (playingSong === submissionId) {
-      audioRef.current?.pause();
-      setPlayingSong(null);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        stopPlayback();
     } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        stopPlayback(); // Stop any currently playing song
+        
+        try {
+            const streamUrl = await musicService.getStreamUrl(song.videoId);
+            if (!streamUrl) {
+                toast({ variant: 'destructive', title: 'Could not play preview.' });
+                return;
+            }
 
-      try {
-        const streamUrl = await musicService.getStreamUrl(song.videoId);
-        if (streamUrl) {
-            audioRef.current = new Audio(streamUrl);
+            const sound = new Howl({
+                src: [streamUrl],
+                format: ['mp3', 'aac', 'm4a'],
+                html5: true,
+                onplay: () => {
+                    setPlayingSong(submissionId);
+                },
+                onpause: () => {
+                    setPlayingSong(null);
+                },
+                onend: () => {
+                    setPlayingSong(null);
+                },
+                onstop: () => {
+                    setPlayingSong(null);
+                },
+                onloaderror: (id, error) => {
+                    const messages: Record<number, string> = {
+                        1: 'MEDIA_ERR_ABORTED',
+                        2: 'MEDIA_ERR_NETWORK',
+                        3: 'MEDIA_ERR_DECODE',
+                        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
+                    };
+                    console.error('Howl load error:', messages[error as number] ?? error, '| URL:', streamUrl);
+                    toast({ variant: 'destructive', title: 'Could not load audio.' });
+                    setPlayingSong(null);
+                },
+                onplayerror: (id, error) => {
+                    console.error('Howl play error:', error);
+                    toast({ variant: 'destructive', title: 'Could not play preview.' });
+                    setPlayingSong(null);
+                }
+            });
+
+            audioRef.current = sound;
+            
             const { startTime = 0, endTime } = song;
 
-            audioRef.current.currentTime = startTime;
-            audioRef.current.play();
-            setPlayingSong(submissionId);
-            
-            const onEnded = () => {
-                setPlayingSong(null);
-            };
-
-            audioRef.current.addEventListener('ended', onEnded);
-            audioRef.current.addEventListener('pause', onEnded);
+            sound.seek(startTime);
+            sound.play();
 
             if (endTime) {
               const duration = (endTime - startTime) * 1000;
-              timeoutRef.current = setTimeout(() => {
-                audioRef.current?.pause();
-              }, duration);
+              if (duration > 0) {
+                timeoutRef.current = setTimeout(() => {
+                    sound.pause();
+                }, duration);
+              }
             }
-        } else {
-            toast({ variant: 'destructive', title: 'Could not play preview.'})
+
+        } catch (error) {
+            console.error("Playback failed:", error);
+            toast({ variant: 'destructive', title: 'Could not play preview.' })
         }
-      } catch (error) {
-        console.error("Playback failed:", error);
-        toast({ variant: 'destructive', title: 'Could not play preview.'})
-      }
     }
   };
 
