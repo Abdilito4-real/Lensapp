@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AuthButton } from '@/components/auth-button';
 import Image from 'next/image';
+import { ThemeToggle } from './theme-toggle';
 
 export function AppHeader() {
   return (
@@ -13,6 +14,7 @@ export function AppHeader() {
             </Link>
         </div>
         <div className="flex items-center gap-4">
+            <ThemeToggle />
             <AuthButton />
         </div>
       </div>
