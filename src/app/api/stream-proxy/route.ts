@@ -32,23 +32,24 @@ export async function GET(request: NextRequest) {
       console.error('Audio fetch failed:', audioRes.status);
       return new NextResponse('Audio source error', { status: audioRes.status });
     }
+    
+    // 3. Verify content type from upstream
+    const contentType = audioRes.headers.get('content-type');
+    if (!contentType || (!contentType.startsWith('audio/') && !contentType.startsWith('video/'))) {
+      console.error('Upstream response is not audio/video. Content-Type:', contentType);
+      return new NextResponse('Invalid content type from upstream', { status: 502 });
+    }
 
-    // 3. Prepare response headers
+    // 4. Prepare response headers
     const headers = new Headers(audioRes.headers);
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Range');
+    
+    // Ensure the content-type is passed along
+    headers.set('content-type', contentType);
 
-    // If the upstream didn't set a content-type, try to guess or set a safe default
-    if (!headers.has('content-type')) {
-      const ext = url.split('.').pop()?.toLowerCase();
-      if (ext === 'mp3') headers.set('content-type', 'audio/mpeg');
-      else if (ext === 'm4a') headers.set('content-type', 'audio/mp4');
-      else if (ext === 'ogg') headers.set('content-type', 'audio/ogg');
-      else headers.set('content-type', 'audio/mpeg'); // fallback
-    }
-
-    // 4. Return the audio stream
+    // 5. Return the audio stream
     return new NextResponse(audioRes.body, {
       status: audioRes.status,
       statusText: audioRes.statusText,
