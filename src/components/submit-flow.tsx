@@ -37,6 +37,7 @@ import Draggable from 'react-draggable';
 import { Input } from '@/components/ui/input';
 import { AudioTrimmer } from './audio-trimmer';
 import { LensLoader } from './lens-loader';
+import { Howl } from 'howler';
 
 type Stage = 'select' | 'preview';
 
@@ -163,7 +164,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSongLoading, setIsSongLoading] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<Howl | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
   const [caption, setCaption] = useState('');
@@ -287,9 +288,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   
   const resetFlow = () => {
     if (audioRef.current) {
-      audioRef.current.pause();
+      audioRef.current.unload();
       audioRef.current = null;
-      setIsPlaying(false);
     }
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (imagePreview && imagePreview.startsWith('blob:')) {
@@ -390,34 +390,44 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     router.push('/');
   }
 
-  const togglePlayback = async () => {
-    if (!audioRef.current) return;
+  const togglePlayback = () => {
+    const sound = audioRef.current;
+    if (!sound || !selectedSong) return;
 
-    if (isPlaying) {
-      audioRef.current.pause();
+    if (sound.playing()) {
+      sound.pause();
     } else {
-      try {
-        if (audioRef.current.ended || (selectedSong?.endTime && audioRef.current.currentTime >= selectedSong.endTime)) {
-          audioRef.current.currentTime = selectedSong?.startTime || 0;
+      const { startTime = 0, endTime } = selectedSong;
+      const currentTime = sound.seek() as number;
+
+      if (endTime && currentTime >= endTime) {
+        sound.seek(startTime);
+      }
+      
+      sound.play();
+
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (endTime) {
+        const remainingDuration = (endTime - (sound.seek() as number)) * 1000;
+        if (remainingDuration > 0) {
+            timeoutRef.current = setTimeout(() => {
+                sound.pause();
+            }, remainingDuration);
         }
-        await audioRef.current.play();
-      } catch (error) {
-        console.error("Playback failed:", error);
-        toast({ variant: 'destructive', title: 'Could not play preview.' });
       }
     }
   };
 
-  const handleSongSelected = async (song: Song | null) => {
+  const handleSongSelected = (song: Song | null) => {
     if (audioRef.current) {
-      audioRef.current.pause();
+      audioRef.current.unload();
       audioRef.current = null;
     }
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setIsPlaying(false);
-
-    if (!song) {
-      setSelectedSong(null);
+    setSelectedSong(null);
+    
+    if (!song || !song.videoId) {
       return;
     }
 
@@ -425,55 +435,67 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsSongLoading(true);
     setSelectedSong(song);
 
-    try {
-      const streamUrl = await musicService.getStreamUrl(song.videoId!);
+    musicService.getStreamUrl(song.videoId).then((url) => {
       if (!isMountedRef.current) return;
-
-      if (streamUrl) {
-        const audio = new Audio(streamUrl);
-        audioRef.current = audio;
-        const { startTime = 0, endTime } = song;
-
-        audio.onplay = () => setIsPlaying(true);
-        audio.onpause = () => setIsPlaying(false);
-        audio.onended = () => {
-          setIsPlaying(false);
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        };
-        
-        audio.addEventListener('loadeddata', async () => {
-          if (!isMountedRef.current) return;
-          audio.currentTime = startTime;
-          try {
-            await audio.play();
-            if (endTime) {
-                const duration = (endTime - audio.currentTime) * 1000;
-                if (duration > 0) {
-                    timeoutRef.current = setTimeout(() => audio.pause(), duration);
-                } else {
-                    audio.pause();
-                }
-            }
-          } catch(e) {
-             console.error("Autoplay was prevented:", e);
-             toast({ title: 'Autoplay blocked', description: 'Tap the play button to start the music.'});
-          }
-        });
-
-      } else {
-        toast({ variant: 'destructive', title: 'Could not get stream URL.' });
-        setSelectedSong(null);
-      }
-    } catch (error) {
-      if (!isMountedRef.current) return;
-      console.error('Playback failed:', error);
-      toast({ variant: 'destructive', title: 'Could not play preview.' });
-      setSelectedSong(null);
-    } finally {
-      if (isMountedRef.current) {
+      if (!url) {
+        toast({ variant: 'destructive', title: 'Could not load audio.' });
         setIsSongLoading(false);
+        setSelectedSong(null);
+        return;
       }
-    }
+
+      const sound = new Howl({
+        src: [url],
+        format: ['mp3', 'aac', 'm4a'],
+        html5: true,
+        onplay: () => {
+          if (isMountedRef.current) setIsPlaying(true);
+        },
+        onpause: () => {
+          if (isMountedRef.current) setIsPlaying(false);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        },
+        onend: () => {
+          if (isMountedRef.current) setIsPlaying(false);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        },
+        onload: () => {
+            if (!isMountedRef.current) return;
+            setIsSongLoading(false);
+            
+            const { startTime = 0, endTime } = song;
+            sound.seek(startTime);
+            sound.play();
+
+            if (endTime) {
+              const duration = (endTime - startTime) * 1000;
+              if (duration > 0) {
+                timeoutRef.current = setTimeout(() => {
+                  sound.pause();
+                }, duration);
+              }
+            }
+        },
+        onloaderror: (id, error) => {
+          console.error('Howl load error:', error);
+          if (isMountedRef.current) {
+            toast({ variant: 'destructive', title: 'Failed to load song.' });
+            setIsSongLoading(false);
+            setSelectedSong(null);
+          }
+        },
+        onplayerror: (id, error) => {
+            console.error('Howl play error:', error);
+            if (isMountedRef.current) {
+                toast({ variant: 'destructive', title: 'Playback failed.', description: 'Please try another song.' });
+                setIsSongLoading(false);
+                setSelectedSong(null);
+            }
+        }
+      });
+      
+      audioRef.current = sound;
+    });
   };
 
   const handleSegmentSelected = (startTime: number, endTime: number) => {
@@ -490,7 +512,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   
   const handleRemoveSong = () => {
     if (audioRef.current) {
-      audioRef.current.pause();
+      audioRef.current.unload();
       audioRef.current = null;
     }
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -639,7 +661,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-      audioRef.current?.pause();
+      audioRef.current?.unload();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
@@ -1017,5 +1039,3 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     </Card>
   );
 }
-
-    

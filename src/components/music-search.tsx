@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { Search, Music, Play, Pause } from 'lucide-react';
 import { LensLoader } from './lens-loader';
 import { useToast } from '@/hooks/use-toast';
+import { Howl } from 'howler';
 
 interface MusicSearchProps {
   onSelectSong: (song: Song | null) => void;
@@ -29,8 +30,7 @@ export function MusicSearch({
   const { toast } = useToast();
 
   const [previewingSongId, setPreviewingSongId] = useState<string | null>(null);
-  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previewAudioRef = useRef<Howl | null>(null);
 
   const searchSongs = useCallback(
     debounce(async (searchQuery: string) => {
@@ -57,13 +57,9 @@ export function MusicSearch({
   );
 
   const stopPreview = useCallback(() => {
-    if (previewAudioRef.current) {
-      previewAudioRef.current.pause();
-      previewAudioRef.current = null;
-    }
-    if (previewTimeoutRef.current) {
-      clearTimeout(previewTimeoutRef.current);
-    }
+    previewAudioRef.current?.stop();
+    previewAudioRef.current?.unload();
+    previewAudioRef.current = null;
     setPreviewingSongId(null);
   }, []);
 
@@ -103,33 +99,43 @@ export function MusicSearch({
 
     stopPreview(); // Stop any other preview
 
-    try {
-      setPreviewingSongId(song.id);
-      const streamUrl = await musicService.getStreamUrl(song.videoId);
+    setPreviewingSongId(song.id);
 
-      if (streamUrl) {
-        const audio = new Audio(streamUrl);
-        previewAudioRef.current = audio;
-        audio.volume = 0.5;
-        
-        const onEnd = () => {
-          if (previewAudioRef.current === audio) {
+    try {
+      const streamUrl = await musicService.getStreamUrl(song.videoId);
+      if (!streamUrl) throw new Error('No stream URL');
+
+      const sound = new Howl({
+        src: [streamUrl],
+        format: ['mp3', 'aac', 'm4a'], // Allow common formats
+        html5: true, // Use HTML5 Audio to avoid WebAudio CORS issues
+        volume: 0.5,
+        onplay: () => {
+             // Stop after 7 seconds
+            setTimeout(() => sound.stop(), 7000);
+        },
+        onend: () => {
+            if (previewAudioRef.current === sound) {
+              stopPreview();
+            }
+        },
+        onplayerror: (id, error) => {
+          console.error('Howl play error:', error);
+          toast({ variant: 'destructive', title: 'Could not play preview.' });
+          if (previewAudioRef.current === sound) {
             stopPreview();
           }
-        };
-        audio.addEventListener('ended', onEnd);
-        audio.addEventListener('pause', onEnd);
-
-        await audio.play();
-        
-        previewTimeoutRef.current = setTimeout(() => {
-            onEnd();
-        }, 7000); // 7-second preview
-
-      } else {
-        toast({ variant: 'destructive', title: 'Could not play preview.' });
-        stopPreview();
-      }
+        },
+        onloaderror: (id, error) => {
+            console.error('Howl load error:', error);
+            toast({ variant: 'destructive', title: 'Could not play preview.'});
+            if (previewAudioRef.current === sound) {
+                stopPreview();
+            }
+        }
+      });
+      previewAudioRef.current = sound;
+      sound.play();
     } catch (error) {
       console.error('Preview failed:', error);
       toast({ variant: 'destructive', title: 'Could not play preview.' });
