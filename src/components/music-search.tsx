@@ -129,8 +129,12 @@ export function MusicSearch({
       });
       previewAudioRef.current = sound;
       sound.play();
-    } catch {
-      toast({ variant: 'destructive', title: 'No preview available for this track.' });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'No preview available for this track.',
+        description: error.message || 'Could not fetch the audio preview.'
+      });
       setPreviewingSongId(null);
       setIsSongLoading(false);
     }

@@ -31,7 +31,7 @@ export function AudioTrimmer({
   const { toast } = useToast();
 
   const soundRef = useRef<Howl | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(undefined);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState<'start' | 'end' | null>(null);
@@ -88,9 +88,13 @@ export function AudioTrimmer({
         });
 
         soundRef.current = sound;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load audio:', error);
-        toast({ variant: 'destructive', title: 'No preview available for this track.'});
+        toast({
+          variant: 'destructive',
+          title: 'No preview available for this track.',
+          description: error.message || 'Could not fetch the audio preview.'
+        });
         setIsLoading(false);
         onClose();
       }

@@ -500,7 +500,11 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }).catch((error) => {
         console.error("Failed to get audio URL:", error);
         if (isMountedRef.current) {
-          toast({ variant: 'destructive', title: 'No preview available for this track.' });
+          toast({
+            variant: 'destructive',
+            title: 'No preview available for this track.',
+            description: error.message || 'Could not fetch the audio preview.'
+          });
           setIsSongLoading(false);
           setSelectedSong(null);
         }
