@@ -4,6 +4,9 @@ const PIPED_INSTANCES = [
   'https://piped-api.garudalinux.org',
   'https://pipedapi.drgns.space',
   'https://api.piped.projectsegfau.lt',
+  'https://pipedapi.tokhmi.xyz',
+  'https://pipedapi.moomoo.me',
+  'https://pipedapi.syncpundit.io',
 ];
 
 const INVIDIOUS_INSTANCES = [
@@ -12,6 +15,10 @@ const INVIDIOUS_INSTANCES = [
   'https://yt.cdaut.de',
   'https://invidious.lunar.icu',
   'https://iv.ggtyler.dev',
+  'https://iv.melmac.space',
+  'https://inv.zzls.xyz',
+  'https://invidious.tiekoetter.com',
+  'https://invidious.projectsegfau.lt',
 ];
 
 export async function getAudioUrl(videoId: string): Promise<string> {
