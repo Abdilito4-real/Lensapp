@@ -26,6 +26,9 @@ import { musicService } from '@/lib/musicService';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 
 type Stage = 'select' | 'preview';
 
@@ -45,6 +48,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [caption, setCaption] = useState('');
   const [isMusicSearchOpen, setIsMusicSearchOpen] = useState(false);
+
+  const [filters, setFilters] = useState({
+    brightness: 100,
+    contrast: 100,
+    saturate: 100,
+  });
+  const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -114,6 +124,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setImagePreview(null);
     setImageFile(null);
     setSelectedSong(null);
+    setFilters({ brightness: 100, contrast: 100, saturate: 100 });
     setStage('select');
     stopCamera();
   };
@@ -205,7 +216,60 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
           <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2">
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsMusicSearchOpen(true)}><Music className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Crop feature coming soon!"})}><Crop className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Editing tools coming soon!"})}><SlidersHorizontal className="h-5 w-5" /></Button>
+              
+              <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-auto p-2">
+                        <SlidersHorizontal className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Edit Photo</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Adjust brightness, contrast, and saturation.
+                            </p>
+                        </div>
+                        <div className="grid gap-2">
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="brightness">Brightness</Label>
+                                <Slider
+                                    id="brightness"
+                                    value={[filters.brightness]}
+                                    max={200}
+                                    step={1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, brightness: value[0] }))}
+                                    className="col-span-2"
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="contrast">Contrast</Label>
+                                <Slider
+                                    id="contrast"
+                                    value={[filters.contrast]}
+                                    max={200}
+                                    step={1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, contrast: value[0] }))}
+                                    className="col-span-2"
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="saturate">Saturation</Label>
+                                <Slider
+                                    id="saturate"
+                                    value={[filters.saturate]}
+                                    max={200}
+                                    step={1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, saturate: value[0] }))}
+                                    className="col-span-2"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </PopoverContent>
+              </Popover>
+              
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Text feature coming soon!"})}><Type className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Emoji feature coming soon!"})}><Smile className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Undo feature coming soon!"})}><Undo className="h-5 w-5" /></Button>
@@ -221,7 +285,16 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
             </CardHeader>
             <CardContent className="space-y-4 !p-0">
               <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-                  <Image src={imagePreview} alt="Submission preview" fill className="object-cover" sizes="(max-width: 448px) 100vw, 448px" />
+                  <Image 
+                    src={imagePreview} 
+                    alt="Submission preview" 
+                    fill 
+                    className="object-cover" 
+                    sizes="(max-width: 448px) 100vw, 448px" 
+                    style={{
+                      filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%)`
+                    }}
+                  />
               </div>
               <div className="space-y-4 p-4">
                 {selectedSong && (
