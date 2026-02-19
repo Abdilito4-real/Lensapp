@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, type ChangeEvent, useEffect } from 'react';
@@ -370,6 +369,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const handleDragStop = (id: number, data: { x: number; y: number }) => {
     setTexts(texts.map(t => (t.id === id ? { ...t, position: { ...data } } : t)));
+    setActiveTextId(null);
+    setIsEditPopoverOpen(false);
   };
   
   const handleTextColorChange = (color: string) => {
@@ -475,6 +476,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                           ))}
                         </div>
                       </div>
+                      <Button onClick={() => setIsEditPopoverOpen(false)}>OK</Button>
                     </div>
                   ) : (
                     <div className="grid gap-4">
