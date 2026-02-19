@@ -25,7 +25,7 @@ import { useRouter } from 'next/navigation';
 import { MusicSearch } from './music-search';
 import type { Song } from '@/lib/musicService';
 import { musicService } from '@/lib/musicService';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -247,8 +247,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   if (stage === 'preview' && imagePreview) {
     return (
       <>
-        <div className="w-full max-w-md mx-auto">
-          <header className="flex items-center justify-between py-2">
+        <div className="w-full max-w-md mx-auto flex flex-col h-full" style={{minHeight: 'calc(100vh - 10rem)'}}>
+          <header className="flex items-center justify-between py-2 flex-shrink-0">
               <Button variant="ghost" size="icon" onClick={resetFlow}>
                   <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -256,7 +256,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               <div className="w-10"></div> {/* Spacer */}
           </header>
 
-          <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2">
+          <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2 flex-shrink-0">
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsMusicSearchOpen(true)}><Music className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsCropping(true)}><Crop className="h-5 w-5" /></Button>
               
@@ -328,88 +328,73 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => toast({ title: "Redo feature coming soon!"})}><Redo className="h-5 w-5" /></Button>
           </div>
 
-          <Card className="shadow-none border-none bg-transparent">
-            <CardHeader>
-              <CardTitle>Submit to "{challengeTopic}"</CardTitle>
-              <CardDescription>
-                  Review your photo and add details before submitting.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 !p-0">
-              <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border">
-                  <Image 
-                    src={imagePreview} 
-                    alt="Submission preview" 
-                    fill 
-                    className="object-cover" 
-                    sizes="(max-width: 448px) 100vw, 448px" 
-                    style={{
-                      filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%)`
-                    }}
-                  />
-              </div>
-              <div className="space-y-4 p-4">
+          <div className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4">
+              <Image 
+                src={imagePreview} 
+                alt="Submission preview" 
+                fill 
+                className="object-contain" 
+                sizes="(max-width: 448px) 100vw, 448px" 
+                style={{
+                  filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%)`
+                }}
+              />
+              
+              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
                 {selectedSong && (
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Selected song</label>
-                        <Card className="p-3 flex items-center justify-between">
-                            <div className="flex items-center gap-3 min-w-0">
-                            {selectedSong.thumbnail && (
-                                <Image
-                                src={selectedSong.thumbnail}
-                                alt={selectedSong.title}
-                                width={40}
-                                height={40}
-                                className="w-10 h-10 rounded object-cover flex-shrink-0"
-                                />
-                            )}
-                            <div className="min-w-0">
-                                <p className="font-medium truncate">{selectedSong.title}</p>
-                                <p className="text-sm text-muted-foreground truncate">
-                                {selectedSong.artist}
-                                </p>
-                            </div>
-                            </div>
-                            <div className="flex items-center">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={togglePlayback}
-                                    className="h-8 w-8 flex-shrink-0"
-                                >
-                                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setSelectedSong(null)}
-                                    className="h-8 w-8 flex-shrink-0"
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </Card>
-                    </div>
+                    <Card className="p-3 flex items-center justify-between bg-black/50 border-white/20 text-white">
+                        <div className="flex items-center gap-3 min-w-0">
+                        {selectedSong.thumbnail && (
+                            <Image
+                            src={selectedSong.thumbnail}
+                            alt={selectedSong.title}
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded object-cover flex-shrink-0"
+                            />
+                        )}
+                        <div className="min-w-0">
+                            <p className="font-medium truncate">{selectedSong.title}</p>
+                            <p className="text-sm text-white/70 truncate">
+                            {selectedSong.artist}
+                            </p>
+                        </div>
+                        </div>
+                        <div className="flex items-center">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={togglePlayback}
+                                className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
+                            >
+                                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setSelectedSong(null)}
+                                className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </Card>
                 )}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Add caption (optional)</label>
-                    <Textarea 
-                      placeholder="Add caption..."
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                    />
-                </div>
+                <Textarea 
+                  placeholder="Add caption..."
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  className="bg-black/50 border-none text-white placeholder:text-gray-300 focus-visible:ring-0 text-center resize-none"
+                  rows={1}
+                />
               </div>
-            </CardContent>
-            <CardFooter className="flex gap-2">
-              <Button variant="outline" onClick={resetFlow} className="w-full">
-                 Back
-              </Button>
+          </div>
+          
+          <div className="flex-shrink-0">
               <Button onClick={handleFinalSubmission} className="w-full">
                   Submit
               </Button>
-            </CardFooter>
-          </Card>
+          </div>
         </div>
         <Dialog open={isMusicSearchOpen} onOpenChange={setIsMusicSearchOpen}>
             <DialogContent className="sm:max-w-md">
@@ -476,3 +461,5 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     </Card>
   );
 }
+
+    
