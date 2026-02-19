@@ -17,6 +17,20 @@ export interface SearchResponse {
   continuation?: string;
 }
 
+// Helper to parse "Song • Artist • 3:11" into seconds
+function extractDuration(subtitle?: string): number | undefined {
+  if (!subtitle) return undefined;
+  const parts = subtitle.split(' • ');
+  const timeStr = parts[parts.length - 1]; // "3:11"
+  if (!timeStr) return undefined;
+  const [mins, secs] = timeStr.split(':').map(Number);
+  if (!isNaN(mins) && !isNaN(secs)) {
+    return mins * 60 + secs;
+  }
+  return undefined;
+}
+
+
 class MusicService {
   /**
    * Search for songs
@@ -39,32 +53,16 @@ class MusicService {
       return (data.results || [])
         .filter((item: any) => item.resultType === 'song' && item.videoId)
         .map((item: any) => ({
-        id: item.videoId || item.id,
+        id: item.videoId,
         videoId: item.videoId,
         title: item.title,
-        artist: item.artists?.[0]?.name || item.artist || 'Unknown Artist',
-        album: item.album?.name || item.album,
+        artist: item.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+        album: item.album?.name,
         thumbnail: item.thumbnails?.[0]?.url,
-        duration: item.duration,
+        duration: item.duration ?? extractDuration(item.subtitle),
       }));
     } catch (error) {
       console.error('Music search error:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get autocomplete suggestions
-   */
-  async getSuggestions(query: string): Promise<string[]> {
-    try {
-      const response = await fetch(
-        `${BASE_URL}/api/search/suggestions?q=${encodeURIComponent(query)}`
-      );
-      const data = await response.json();
-      return data.suggestions || [];
-    } catch (error) {
-      console.error('Suggestions error:', error);
       return [];
     }
   }

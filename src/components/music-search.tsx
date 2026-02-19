@@ -25,7 +25,6 @@ export function MusicSearch({
   const [results, setResults] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(true); // Default to open in dialog
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -57,22 +56,6 @@ export function MusicSearch({
     [toast]
   );
 
-  const fetchSuggestions = useCallback(
-    debounce(async (searchQuery: string) => {
-      if (!searchQuery.trim()) {
-        setSuggestions([]);
-        return;
-      }
-      try {
-        const sugg = await musicService.getSuggestions(searchQuery);
-        setSuggestions(sugg);
-      } catch (error) {
-        console.error('Failed to get suggestions:', error);
-      }
-    }, 200),
-    []
-  );
-
   const stopPreview = useCallback(() => {
     if (previewAudioRef.current) {
       previewAudioRef.current.pause();
@@ -86,13 +69,11 @@ export function MusicSearch({
 
   useEffect(() => {
     searchSongs(query);
-    fetchSuggestions(query);
     return () => {
       searchSongs.clear();
-      fetchSuggestions.clear();
       stopPreview();
     };
-  }, [query, searchSongs, fetchSuggestions, stopPreview]);
+  }, [query, searchSongs, stopPreview]);
 
   const handleSelectSong = (song: Song) => {
     stopPreview();
@@ -224,21 +205,7 @@ export function MusicSearch({
                   )}
                 </div>
               ))
-            ) : (
-              !loading && suggestions.length > 0 ? (
-                <div className="p-2">
-                  {suggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setQuery(suggestion)}
-                      className="w-full px-4 py-2 text-left hover:bg-muted rounded"
-                    >
-                      <span className="text-muted-foreground">{suggestion}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : null
-            )}
+            ) : null }
             {!loading && results.length === 0 && query.length > 0 && (
               <div className="px-4 py-8 text-center text-muted-foreground">
                 No songs found.
