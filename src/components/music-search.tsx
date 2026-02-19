@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { debounce } from 'debounce';
+import debounce from 'debounce';
 import axios from 'axios';
 import type { Song } from '@/lib/definitions';
 import { Input } from '@/components/ui/input';
