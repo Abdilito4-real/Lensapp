@@ -386,29 +386,17 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   }
 
   const togglePlayback = async () => {
-    if (!selectedSong || !selectedSong.videoId || !audioRef.current) return;
+    if (!audioRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
     } else {
       try {
-        if (audioRef.current.ended) {
-          audioRef.current.currentTime = selectedSong.startTime || 0;
+        // If song ended or reached the end of the segment, restart from the beginning of the segment
+        if (audioRef.current.ended || (selectedSong?.endTime && audioRef.current.currentTime >= selectedSong.endTime)) {
+          audioRef.current.currentTime = selectedSong?.startTime || 0;
         }
         await audioRef.current.play();
-        setIsPlaying(true);
-
-        if (selectedSong.endTime) {
-          const duration = (selectedSong.endTime - audioRef.current.currentTime) * 1000;
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          if (duration > 0) {
-            timeoutRef.current = setTimeout(() => {
-              audioRef.current?.pause();
-            }, duration);
-          } else {
-            audioRef.current?.pause();
-          }
-        }
       } catch (error) {
         console.error("Playback failed:", error);
         toast({ variant: 'destructive', title: 'Could not play preview.' });
@@ -417,6 +405,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
 
   const handleSongSelected = (song: Song | null) => {
+    // Stop any existing audio
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -428,29 +417,43 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsMusicSearchOpen(false);
 
     if (song?.videoId) {
-      const playSong = async () => {
+      const setupAndPlayAudio = async () => {
         try {
           const streamUrl = await musicService.getStreamUrl(song.videoId!);
           if (streamUrl) {
-            audioRef.current = new Audio(streamUrl);
-            const onEnd = () => {
+            const audio = new Audio(streamUrl);
+            audioRef.current = audio;
+
+            const { startTime = 0, endTime } = song;
+            
+            // Event Listeners
+            audio.onplay = () => {
+              setIsPlaying(true);
+              if (endTime) {
+                const duration = (endTime - audio.currentTime) * 1000;
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (duration > 0) {
+                    timeoutRef.current = setTimeout(() => audio.pause(), duration);
+                } else {
+                    audio.pause();
+                }
+              }
+            };
+
+            audio.onpause = () => {
               setIsPlaying(false);
               if (timeoutRef.current) clearTimeout(timeoutRef.current);
             };
-            audioRef.current.onpause = onEnd;
-            audioRef.current.onended = onEnd;
 
-            const { startTime = 0, endTime } = song;
-            audioRef.current.currentTime = startTime;
-            await audioRef.current.play();
-            setIsPlaying(true);
+            audio.onended = () => {
+              setIsPlaying(false);
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            };
 
-            if (endTime) {
-              const duration = (endTime - startTime) * 1000;
-              timeoutRef.current = setTimeout(() => {
-                audioRef.current?.pause();
-              }, duration);
-            }
+            // Start playback
+            audio.currentTime = startTime;
+            await audio.play();
+
           } else {
             toast({ variant: 'destructive', title: 'Could not play preview.' });
           }
@@ -459,7 +462,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
           toast({ variant: 'destructive', title: 'Could not play preview.' });
         }
       };
-      playSong();
+      setupAndPlayAudio();
     }
   };
   
