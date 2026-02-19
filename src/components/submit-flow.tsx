@@ -36,6 +36,7 @@ import { ImageCropper } from './image-cropper';
 import Draggable from 'react-draggable';
 import { Input } from '@/components/ui/input';
 import { AudioTrimmer } from './audio-trimmer';
+import { LensLoader } from './lens-loader';
 
 type Stage = 'select' | 'preview';
 
@@ -161,8 +162,10 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const router = useRouter();
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSongLoading, setIsSongLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
   const [caption, setCaption] = useState('');
   const [isMusicSearchOpen, setIsMusicSearchOpen] = useState(false);
 
@@ -185,7 +188,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newState);
     setHistory(newHistory);
-    setHistoryIndex(newHistory.length);
+    setHistoryIndex(newHistory.length - 1);
   };
   
   const handleUndo = () => {
@@ -394,7 +397,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       audioRef.current.pause();
     } else {
       try {
-        // If song ended or reached the end of the segment, restart from the beginning of the segment
         if (audioRef.current.ended || (selectedSong?.endTime && audioRef.current.currentTime >= selectedSong.endTime)) {
           audioRef.current.currentTime = selectedSong?.startTime || 0;
         }
@@ -406,8 +408,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }
   };
 
-  const handleSongSelected = (song: Song | null) => {
-    // Stop any existing audio
+  const handleSongSelected = async (song: Song | null) => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -415,56 +416,63 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setIsPlaying(false);
 
-    setSelectedSong(song);
+    if (!song) {
+      setSelectedSong(null);
+      return;
+    }
+
     setIsMusicSearchOpen(false);
+    setIsSongLoading(true);
+    setSelectedSong(song);
 
-    if (song?.videoId) {
-      const setupAndPlayAudio = async () => {
-        try {
-          const streamUrl = await musicService.getStreamUrl(song.videoId!);
-          if (streamUrl) {
-            const audio = new Audio(streamUrl);
-            audioRef.current = audio;
+    try {
+      const streamUrl = await musicService.getStreamUrl(song.videoId!);
+      if (!isMountedRef.current) return;
 
-            const { startTime = 0, endTime } = song;
-            
-            // Event Listeners
-            audio.onplay = () => {
-              setIsPlaying(true);
-              if (endTime) {
+      if (streamUrl) {
+        const audio = new Audio(streamUrl);
+        audioRef.current = audio;
+        const { startTime = 0, endTime } = song;
+
+        audio.onplay = () => setIsPlaying(true);
+        audio.onpause = () => setIsPlaying(false);
+        audio.onended = () => {
+          setIsPlaying(false);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+        
+        audio.addEventListener('loadeddata', async () => {
+          if (!isMountedRef.current) return;
+          audio.currentTime = startTime;
+          try {
+            await audio.play();
+            if (endTime) {
                 const duration = (endTime - audio.currentTime) * 1000;
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
                 if (duration > 0) {
                     timeoutRef.current = setTimeout(() => audio.pause(), duration);
                 } else {
                     audio.pause();
                 }
-              }
-            };
-
-            audio.onpause = () => {
-              setIsPlaying(false);
-              if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            };
-
-            audio.onended = () => {
-              setIsPlaying(false);
-              if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            };
-
-            // Start playback
-            audio.currentTime = startTime;
-            await audio.play();
-
-          } else {
-            toast({ variant: 'destructive', title: 'Could not play preview.' });
+            }
+          } catch(e) {
+             console.error("Autoplay was prevented:", e);
+             toast({ title: 'Autoplay blocked', description: 'Tap the play button to start the music.'});
           }
-        } catch (error) {
-          console.error('Playback failed:', error);
-          toast({ variant: 'destructive', title: 'Could not play preview.' });
-        }
-      };
-      setupAndPlayAudio();
+        });
+
+      } else {
+        toast({ variant: 'destructive', title: 'Could not get stream URL.' });
+        setSelectedSong(null);
+      }
+    } catch (error) {
+      if (!isMountedRef.current) return;
+      console.error('Playback failed:', error);
+      toast({ variant: 'destructive', title: 'Could not play preview.' });
+      setSelectedSong(null);
+    } finally {
+      if (isMountedRef.current) {
+        setIsSongLoading(false);
+      }
     }
   };
 
@@ -519,7 +527,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         });
     }
 
-    // After cropping, reset history as overlays/filters might not map correctly.
     const initialState: EditorState = { filters: initialFilters, texts: [], emojis: [] };
     setHistory([initialState]);
     setHistoryIndex(0);
@@ -629,20 +636,17 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       audioRef.current?.pause();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
-    }
+    };
   }, [imagePreview]);
 
-  useEffect(() => {
-    if (!selectedSong && audioRef.current) {
-        audioRef.current.pause();
-    }
-  }, [selectedSong]);
 
   const activeText = texts.find(t => t.id === activeTextId);
   const activeEmoji = emojis.find(e => e.id === activeEmojiId);
@@ -888,30 +892,36 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                         </div>
                         </div>
                         <div className="flex items-center">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setShowTrimmer(true)}
-                                className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
-                            >
-                                <SlidersHorizontal className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={togglePlayback}
-                                className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
-                            >
-                                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleRemoveSong}
-                                className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
+                            {isSongLoading ? (
+                                <LensLoader className="w-5 h-5" />
+                            ) : (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setShowTrimmer(true)}
+                                        className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
+                                    >
+                                        <SlidersHorizontal className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={togglePlayback}
+                                        className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
+                                    >
+                                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleRemoveSong}
+                                        className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </Card>
                 )}
@@ -939,7 +949,10 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                         Search for a song and select a segment to add to your photo.
                     </DialogDescription>
                 </DialogHeader>
-                <MusicSearch onSelectSong={handleSongSelected} />
+                <MusicSearch 
+                  key={String(isMusicSearchOpen)}
+                  onSelectSong={handleSongSelected}
+                />
             </DialogContent>
         </Dialog>
 
@@ -1004,3 +1017,5 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     </Card>
   );
 }
+
+    
