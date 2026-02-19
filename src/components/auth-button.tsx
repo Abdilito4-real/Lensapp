@@ -28,9 +28,8 @@ export function AuthButton() {
   const { user, login, logout, isAuthenticated } = useAuth();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
 
-  const handleLogin = () => {
-    // For this mock, we'll just log in the first user.
-    login(users[0]);
+  const handleLogin = async () => {
+    await login();
     setIsLoginDialogOpen(false);
   };
   

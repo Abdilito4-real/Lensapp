@@ -4,11 +4,12 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Play, Pause, Music } from 'lucide-react';
+import { Heart, Play, Pause, Music, Download as DownloadIcon } from 'lucide-react';
 import { submissions } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import type { Song } from '@/lib/musicService';
+import { Waveform } from '@/components/waveform';
 import { useToast } from '@/hooks/use-toast';
 import { Howl } from 'howler';
 import { getAudioUrl } from '@/lib/get-audio-url';
@@ -125,11 +126,17 @@ export default function VotePage() {
                   )}
                   {submission.song && (
                     <div 
-                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                      className={cn(
+                        "absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 cursor-pointer",
+                        isPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      )}
                       onClick={() => togglePreview(submission.id, submission.song!)}
                     >
-                      <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        {isPlaying ? <Pause className="h-10 w-10 text-white" /> : <Play className="h-10 w-10 text-white" />}
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-xl">
+                          {isPlaying ? <Pause className="h-10 w-10 text-white" /> : <Play className="h-10 w-10 text-white ml-1" />}
+                        </div>
+                        {isPlaying && <Waveform isPlaying={true} color="bg-white" barCount={20} className="h-8" />}
                       </div>
                     </div>
                   )}
@@ -162,19 +169,23 @@ export default function VotePage() {
                               {submission.song.artist}
                           </p>
                       </div>
-                      {isPlaying && (
-                          <div className="flex items-center gap-0.5 h-4">
-                            <span className="w-1 h-full bg-primary animate-[wave_1.2s_ease-in-out_-0.4s_infinite_both]"></span>
-                            <span className="w-1 h-2/3 bg-primary animate-[wave_1.2s_ease-in-out_-0.2s_infinite_both]"></span>
-                            <span className="w-1 h-full bg-primary animate-[wave_1.2s_ease-in-out_0s_infinite_both]"></span>
-                            <style>{`
-                              @keyframes wave {
-                                0%, 100% { transform: scaleY(0.5); }
-                                50% { transform: scaleY(1); }
-                              }
-                            `}</style>
-                          </div>
-                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const audioUrl = await getAudioUrl(submission.song!.title, submission.song!.artist);
+                            window.open(audioUrl, '_blank');
+                          } catch (error) {
+                            toast({ variant: 'destructive', title: 'Download unavailable.' });
+                          }
+                        }}
+                      >
+                        <DownloadIcon className="h-4 w-4" />
+                      </Button>
+                      <Waveform isPlaying={isPlaying} barCount={8} className="h-4" />
                   </div>
                 )}
               </CardContent>

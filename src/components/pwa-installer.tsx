@@ -59,10 +59,15 @@ export function PwaInstaller() {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 animate-in fade-in slide-in-from-bottom-5 md:bottom-4">
-      <Button onClick={handleInstallClick}>
-        <Download className="mr-2 h-4 w-4" />
-        Install App
+    <div className="fixed bottom-24 right-4 z-[100] animate-in fade-in slide-in-from-bottom-5 md:bottom-8 md:right-8">
+      <Button
+        onClick={handleInstallClick}
+        className="rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-6 h-auto font-bold flex items-center gap-2 border-2 border-background/20 backdrop-blur-sm"
+      >
+        <div className="bg-background/20 p-1.5 rounded-full">
+          <Download className="h-5 w-5" />
+        </div>
+        <span>Install Lens App</span>
       </Button>
     </div>
   );

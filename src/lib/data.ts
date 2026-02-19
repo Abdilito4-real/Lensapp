@@ -40,10 +40,78 @@ export const submissions: Submission[] = [
       endTime: 50,
     }
   },
-  { id: 'submission-2', userId: 'user-2', challengeId: 'challenge-0', imageId: 'submission-2', upvotes: 35, timestamp: '2023-10-26T11:00:00Z' },
-  { id: 'submission-3', userId: 'user-3', challengeId: 'challenge-0', imageId: 'submission-3', upvotes: 68, timestamp: '2023-10-26T12:00:00Z' },
-  { id: 'submission-4', userId: 'user-4', challengeId: 'challenge-0', imageId: 'submission-4', upvotes: 12, timestamp: '2023-10-26T13:00:00Z' },
-  { id: 'submission-5', userId: 'user-5', challengeId: 'challenge-0', imageId: 'submission-5', upvotes: 55, timestamp: '2023-10-26T14:00:00Z' },
+  {
+    id: 'submission-2',
+    userId: 'user-2',
+    challengeId: 'challenge-0',
+    imageId: 'submission-2',
+    upvotes: 35,
+    timestamp: '2023-10-26T11:00:00Z',
+    song: {
+      id: 'v7m-Vf9S2eM',
+      videoId: 'v7m-Vf9S2eM',
+      title: 'Cruel Summer',
+      artist: 'Taylor Swift',
+      album: 'Lover',
+      thumbnail: 'https://p2.music.126.net/wns4gS-nJXx_e80bKx-Q8A==/109951168341822557.jpg?param=300x300',
+      startTime: 45,
+      endTime: 65,
+    }
+  },
+  {
+    id: 'submission-3',
+    userId: 'user-3',
+    challengeId: 'challenge-0',
+    imageId: 'submission-3',
+    upvotes: 68,
+    timestamp: '2023-10-26T12:00:00Z',
+    song: {
+      id: 'fHI8X4OXskQ',
+      videoId: 'fHI8X4OXskQ',
+      title: 'Blinding Lights',
+      artist: 'The Weeknd',
+      album: 'After Hours',
+      thumbnail: 'https://p2.music.126.net/wns4gS-nJXx_e80bKx-Q8A==/109951168341822557.jpg?param=300x300',
+      startTime: 10,
+      endTime: 30,
+    }
+  },
+  {
+    id: 'submission-4',
+    userId: 'user-4',
+    challengeId: 'challenge-0',
+    imageId: 'submission-4',
+    upvotes: 12,
+    timestamp: '2023-10-26T13:00:00Z',
+    song: {
+      id: 'J_ub7Etch2U',
+      videoId: 'J_ub7Etch2U',
+      title: 'Flowers',
+      artist: 'Miley Cyrus',
+      album: 'Endless Summer Vacation',
+      thumbnail: 'https://p2.music.126.net/wns4gS-nJXx_e80bKx-Q8A==/109951168341822557.jpg?param=300x300',
+      startTime: 60,
+      endTime: 80,
+    }
+  },
+  {
+    id: 'submission-5',
+    userId: 'user-5',
+    challengeId: 'challenge-0',
+    imageId: 'submission-5',
+    upvotes: 55,
+    timestamp: '2023-10-26T14:00:00Z',
+    song: {
+      id: 'H5v3kku4y6Q',
+      videoId: 'H5v3kku4y6Q',
+      title: 'As It Was',
+      artist: 'Harry Styles',
+      album: "Harry's House",
+      thumbnail: 'https://p2.music.126.net/wns4gS-nJXx_e80bKx-Q8A==/109951168341822557.jpg?param=300x300',
+      startTime: 20,
+      endTime: 40,
+    }
+  },
   { id: 'submission-6', userId: 'user-1', challengeId: 'challenge-0', imageId: 'submission-6', upvotes: 23, timestamp: '2023-10-26T15:00:00Z' },
 ];
 
