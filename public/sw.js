@@ -1,12 +1,19 @@
-// This is a basic service worker to enable PWA functionality.
-// It doesn't implement any caching strategies yet.
+// This is a basic service worker to enable PWA installation.
+// It doesn't implement any advanced caching strategies.
 
 self.addEventListener('install', (event) => {
-  // Perform install steps
+  // Bypass the waiting lifecycle stage.
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  // Take control of all pages under this service worker's scope.
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
-  // This service worker doesn't intercept any fetch requests.
-  // It's just here to make the app installable.
+  // For this app, we'll use a network-first strategy.
+  // This ensures the user always gets the latest content.
+  // It's a simple strategy that works well for online-first apps.
   event.respondWith(fetch(event.request));
 });
