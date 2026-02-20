@@ -19,6 +19,14 @@ import {
   RefreshCcw,
   Wand2,
   Loader2,
+  BookOpen,
+  Clipboard,
+  Coffee,
+  FlaskConical,
+  Gamepad2,
+  GraduationCap,
+  PartyPopper,
+  Pizza,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -979,15 +987,27 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
 
   // Select stage
   return (
-    <div className="w-full max-w-lg mx-auto">
-        <div className="space-y-8">
+    <div className="w-full max-w-lg mx-auto relative overflow-hidden py-8">
+      <div className="absolute inset-0 z-0">
+        <GraduationCap className="absolute top-[10%] left-[15%] h-12 w-12 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '0.2s' }} />
+        <BookOpen className="absolute top-[25%] right-[10%] h-16 w-16 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '0.5s' }} />
+        <Clipboard className="absolute bottom-[20%] left-[20%] h-10 w-10 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '0.8s' }} />
+        <FlaskConical className="absolute bottom-[10%] right-[25%] h-12 w-12 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '1.1s' }} />
+        
+        <Coffee className="absolute top-[50%] left-[5%] h-10 w-10 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '0.4s' }} />
+        <Pizza className="absolute top-[65%] right-[15%] h-14 w-14 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '0.7s' }} />
+        <Gamepad2 className="absolute top-[80%] left-[30%] h-12 w-12 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '1s' }} />
+        <PartyPopper className="absolute top-[5%] right-[30%] h-10 w-10 text-muted-foreground/20 animate-pulse" style={{ animationDelay: '0.3s' }} />
+      </div>
+
+        <div className="space-y-8 relative z-10">
             <div className="text-center">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">Submit Your Photo</h1>
                 <p className="max-w-md mx-auto text-muted-foreground md:text-lg">
                     Upload your best shot for today's challenge.
                 </p>
             </div>
-            <Card className="w-full max-w-md mx-auto">
+            <Card className="w-full max-w-md mx-auto bg-background/80 backdrop-blur-sm">
             <CardHeader>
                 <CardTitle>Challenge: {challengeTopic}</CardTitle>
                 <CardDescription>
