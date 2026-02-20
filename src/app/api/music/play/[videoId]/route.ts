@@ -16,7 +16,7 @@ export async function GET(
     }
 
     try {
-        const apiUrl = `${BASE_URL}/api/stream/${videoId}`;
+        const apiUrl = `${BASE_URL}/api/play/${videoId}`;
         console.log(`[PROXY] Fetching from external API: ${apiUrl}`);
 
         // Fetch without automatically following redirects
