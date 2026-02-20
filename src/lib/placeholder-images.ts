@@ -117,7 +117,7 @@ export const PlaceHolderImages: ImagePlaceholder[] = [
   {
     "id": "gallery-4",
     "description": "Students studying outdoors",
-    "imageUrl": "https://images.stockcake.com/public/2/0/4/20406b38-ae9c-4d6f-bc9f-ba54d5a0d1b0_large/students-studying-outdoors-stockcake.jpg",
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRERxQtCBAiOAj96ny8FvsEhPqrbSudy2pnf3JHiwt_C9fNqecD",
     "imageHint": "students outdoors"
   }
 ];
