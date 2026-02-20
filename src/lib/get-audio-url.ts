@@ -1,10 +1,20 @@
 export async function getAudioUrl(title: string, artist: string): Promise<string> {
   const tokenResponse = await fetch('/api/spotify-token');
-  const tokenData = await tokenResponse.json();
+  const tokenText = await tokenResponse.text();
 
-  if (!tokenResponse.ok || !tokenData.token) {
-    const errorMessage = tokenData.error || 'Could not authenticate with Spotify.';
-    throw new Error(errorMessage);
+  if (!tokenResponse.ok) {
+    try {
+      const errorJson = JSON.parse(tokenText);
+      throw new Error(errorJson.error || 'Could not authenticate with Spotify.');
+    } catch (e) {
+      throw new Error(`Could not authenticate with Spotify. Server says: ${tokenText}`);
+    }
+  }
+
+  const tokenData = JSON.parse(tokenText);
+
+  if (!tokenData.token) {
+    throw new Error(tokenData.error || 'Could not authenticate with Spotify: No token received.');
   }
   const { token } = tokenData;
 
@@ -14,11 +24,17 @@ export async function getAudioUrl(title: string, artist: string): Promise<string
     { headers: { Authorization: `Bearer ${token}` } }
   );
 
-  const searchData = await searchResponse.json();
-
+  const searchBody = await searchResponse.text();
   if (!searchResponse.ok) {
-    throw new Error(searchData.error?.message || 'Failed to search Spotify.');
+    try {
+      const searchError = JSON.parse(searchBody);
+      throw new Error(searchError.error?.message || 'Failed to search Spotify.');
+    } catch(e) {
+      throw new Error(`Failed to search Spotify. Server says: ${searchBody}`);
+    }
   }
+
+  const searchData = JSON.parse(searchBody);
 
   const previewUrl = searchData.tracks?.items?.[0]?.preview_url;
   if (!previewUrl) throw new Error('No preview available for this track');
