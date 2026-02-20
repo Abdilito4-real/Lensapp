@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 
 const BASE_URL = 'https://verome-api.deno.dev';
@@ -15,7 +16,7 @@ export async function GET(
     }
 
     try {
-        const apiUrl = `${BASE_URL}/play/${videoId}`;
+        const apiUrl = `${BASE_URL}/api/play/${videoId}`;
         console.log(`[PROXY] Fetching from external API: ${apiUrl}`);
         const response = await fetch(apiUrl);
 
