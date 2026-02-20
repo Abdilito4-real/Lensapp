@@ -159,7 +159,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
@@ -186,6 +186,12 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const [history, setHistory] = useState<EditorState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  useEffect(() => {
+    if (videoStream && videoRef.current) {
+      videoRef.current.srcObject = videoStream;
+    }
+  }, [videoStream]);
 
   const recordHistory = (newState: EditorState) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -246,29 +252,23 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
 
   const startCamera = async (mode: 'user' | 'environment') => {
-    if (isCameraOn && videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setIsCameraOn(true);
-      }
+      setVideoStream(stream);
     } catch (err) {
       console.error("Error accessing camera: ", err);
       toast({ title: 'Camera Error', description: 'Could not access the camera. Please ensure permissions are granted.', variant: 'destructive' });
-      setIsCameraOn(false);
+      setVideoStream(null);
     }
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      setIsCameraOn(false);
+    if (videoStream) {
+      videoStream.getTracks().forEach(track => track.stop());
+      setVideoStream(null);
     }
   };
   
@@ -1037,7 +1037,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-            {isCameraOn ? (
+            {videoStream ? (
               <div className='flex flex-col items-center gap-4'>
                 <div className='w-full rounded-lg overflow-hidden border relative'>
                   <video
