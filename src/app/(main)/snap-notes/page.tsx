@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle } from 'lucide-react';
+import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle, X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateStudyTools } from '@/lib/studyactions';
 import type { SnapNotesOutput } from '@/ai/flows/snap-notes-flow';
@@ -145,29 +145,32 @@ const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<F
 
 
 export default function SnapNotesPage() {
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [state, formAction] = useActionState(generateStudyTools, { result: undefined, error: undefined });
   const { toast } = useToast();
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      try {
-        const resizedFile = await resizeImage(file, 1024, 1024);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result as string);
-          setImageFile(resizedFile);
-        };
-        reader.readAsDataURL(resizedFile);
-      } catch(error) {
-        console.error("Image resize failed:", error);
-        toast({ title: 'Image Error', description: 'Could not process the selected image.', variant: 'destructive' });
+    const files = event.target.files;
+    if (files) {
+      for (const file of Array.from(files)) {
+          try {
+            const resizedFile = await resizeImage(file, 1024, 1024);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreviews(prev => [...prev, reader.result as string]);
+                setImageFiles(prev => [...prev, resizedFile]);
+            };
+            reader.readAsDataURL(resizedFile);
+          } catch(error) {
+            console.error("Image resize failed:", error);
+            toast({ title: 'Image Error', description: `Could not process ${file.name}.`, variant: 'destructive' });
+          }
       }
     }
   };
@@ -206,8 +209,8 @@ export default function SnapNotesPage() {
                 const resizedFile = await resizeImage(file, 1024, 1024);
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    setImagePreview(reader.result as string);
-                    setImageFile(resizedFile);
+                    setImagePreviews(prev => [...prev, reader.result as string]);
+                    setImageFiles(prev => [...prev, resizedFile]);
                 };
                 reader.readAsDataURL(resizedFile);
             } catch (err) {
@@ -221,27 +224,62 @@ export default function SnapNotesPage() {
     }
   };
   
+  const handleRemoveImage = (indexToRemove: number) => {
+      setImagePreviews(previews => previews.filter((_, index) => index !== indexToRemove));
+      setImageFiles(files => files.filter((_, index) => index !== indexToRemove));
+  };
+  
   const reset = () => {
-      setImageFile(null);
-      setImagePreview(null);
+      setImageFiles([]);
+      setImagePreviews([]);
       stopCamera();
-      // Reset form state if needed, but useFormState handles it
   }
 
-  if (imageFile && imagePreview) {
+  if (imageFiles.length > 0) {
     return (
       <div className="space-y-6">
         <Card>
+          <CardHeader>
+              <CardTitle>Your Notes</CardTitle>
+              <CardDescription>You've selected {imageFiles.length} image{imageFiles.length > 1 ? 's' : ''}. Add more or generate your study tools.</CardDescription>
+          </CardHeader>
           <CardContent className="p-4">
-            <div className="flex justify-center">
-                <Image src={imagePreview} alt="Notes preview" width={500} height={500} className="rounded-lg object-contain w-auto h-auto max-h-96" />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {imagePreviews.map((src, index) => (
+                    <div key={src} className="relative group aspect-square">
+                        <Image src={src} alt={`Note preview ${index + 1}`} fill sizes="(max-width: 768px) 50vw, 33vw" className="rounded-lg object-cover" />
+                        <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            onClick={() => handleRemoveImage(index)}
+                            aria-label="Remove image"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg text-muted-foreground hover:bg-muted hover:border-primary transition-colors"
+                >
+                    <Plus className="h-8 w-8 mb-2" />
+                    <span>Add More</span>
+                </button>
             </div>
           </CardContent>
           <CardFooter className="p-4 pt-0 flex-col items-stretch gap-4">
-              <Button variant="outline" onClick={reset}>Choose a different image</Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="w-full" onClick={startCamera}>
+                    <Camera className="mr-2 h-4 w-4" /> Use Camera
+                </Button>
+                 <Button variant="secondary" className="w-full" onClick={reset}>Clear All</Button>
+              </div>
               <form action={(formData) => {
-                  if (imageFile) {
-                    formData.append('photo', imageFile);
+                  if (imageFiles.length > 0) {
+                    imageFiles.forEach(file => {
+                        formData.append('photo', file);
+                    });
                   }
                   formAction(formData);
               }} className="space-y-4">
@@ -328,8 +366,8 @@ export default function SnapNotesPage() {
                     <div className="space-y-4">
                          <Button className="w-full" asChild>
                             <label htmlFor="file-upload" className="cursor-pointer">
-                                <Upload className="mr-2 h-4 w-4" /> Upload Photo
-                                <input id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                                <Upload className="mr-2 h-4 w-4" /> Upload Photos
+                                <input id="file-upload" ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
                             </label>
                         </Button>
                         <Button variant="outline" className="w-full" onClick={startCamera}>

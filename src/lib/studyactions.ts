@@ -4,7 +4,7 @@ import { createStudyTools, type SnapNotesOutput } from '@/ai/flows/snap-notes-fl
 import { z } from 'zod';
 
 const studyActionSchema = z.object({
-  photo: z.any(),
+  photos: z.array(z.any()),
   action: z.enum(['summarize', 'flashcards', 'quiz']),
 });
 
@@ -23,19 +23,26 @@ export async function generateStudyTools(
   formData: FormData
 ): Promise<StudyState> {
 
-  const photo = formData.get('photo') as File;
+  const photos = formData.getAll('photo') as File[];
   const action = formData.get('action') as 'summarize' | 'flashcards' | 'quiz';
 
-  if (!photo || !action || typeof photo.arrayBuffer !== 'function' ) {
-    return { error: 'A photo and an action are required.' };
+  if (!photos || photos.length === 0 || !action) {
+    return { error: 'At least one photo and an action are required.' };
   }
 
   try {
-    const buffer = Buffer.from(await photo.arrayBuffer());
-    const photoDataUri = toDataURI(buffer, photo.type);
+    const photoDataUris = await Promise.all(
+        photos.map(async (photo) => {
+            if (typeof photo.arrayBuffer !== 'function') {
+                throw new Error('Invalid file type in photos.');
+            }
+            const buffer = Buffer.from(await photo.arrayBuffer());
+            return toDataURI(buffer, photo.type);
+        })
+    );
 
     const result = await createStudyTools({
-      photoDataUri: photoDataUri,
+      photoDataUris: photoDataUris,
       action: action,
     });
 
