@@ -16,10 +16,11 @@ export async function GET(
     }
 
     try {
-        const apiUrl = `${BASE_URL}/api/play/${videoId}`;
+        const apiUrl = `${BASE_URL}/play/${videoId}`;
         console.log(`[PROXY] Fetching from external API: ${apiUrl}`);
 
-        // Fetch without automatically following redirects
+        // The external service redirects to the actual stream URL.
+        // We fetch with `redirect: 'manual'` to capture the 'location' header.
         const response = await fetch(apiUrl, { redirect: 'manual' });
 
         // If it's a redirect (status 3xx), we've found our URL in the 'location' header
@@ -34,25 +35,24 @@ export async function GET(
             }
         }
         
-        // If the response is not a redirect but is not OK, it's an error.
+        // If the response is not a redirect but is also not OK, it's an error.
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`[PROXY] External API Error. Status: ${response.status}, URL: ${apiUrl}, Response: "${errorText}"`);
             
             let errorJson = { error: 'Error from music service.', details: errorText };
              try {
-                // The error from verome-api might be JSON
+                // The error from the API might be JSON, so we try to parse it.
                 const parsedError = JSON.parse(errorText);
                 errorJson.details = parsedError;
             } catch (e) {
-                // It wasn't JSON, so we just use the raw text
+                // It wasn't JSON, so we just use the raw text.
             }
 
             return NextResponse.json(errorJson, { status: response.status });
         }
 
         // Fallback for an unexpected OK response that isn't a redirect.
-        // This case should ideally not happen based on the API's behavior.
         console.error(`[PROXY] Unexpected response from external API. Expected redirect, but got status: ${response.status}`);
         return NextResponse.json({ error: 'Unexpected response from music service.' }, { status: 500 });
 
