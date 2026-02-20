@@ -55,6 +55,11 @@ const initialFilters = {
   brightness: 100,
   contrast: 100,
   saturate: 100,
+  grayscale: 0,
+  sepia: 0,
+  invert: 0,
+  hueRotate: 0,
+  blur: 0,
 };
 
 type EditorState = {
@@ -343,7 +348,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     canvas.width = naturalWidth;
     canvas.height = naturalHeight;
 
-    ctx.filter = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%)`;
+    ctx.filter = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%) grayscale(${filters.grayscale}%) sepia(${filters.sepia}%) invert(${filters.invert}%) hue-rotate(${filters.hueRotate}deg) blur(${filters.blur}px)`;
     ctx.drawImage(image, 0, 0);
     ctx.filter = 'none';
 
@@ -730,6 +735,71 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                                 />
                                 <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.saturate}%</span>
                             </div>
+                            <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="grayscale" className="col-span-2">Grayscale</Label>
+                                <Slider
+                                    id="grayscale"
+                                    value={[filters.grayscale]}
+                                    max={100}
+                                    step={1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, grayscale: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, grayscale: value[0] }, texts, emojis })}
+                                    className="col-span-3"
+                                />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.grayscale}%</span>
+                            </div>
+                             <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="sepia" className="col-span-2">Sepia</Label>
+                                <Slider
+                                    id="sepia"
+                                    value={[filters.sepia]}
+                                    max={100}
+                                    step={1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, sepia: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, sepia: value[0] }, texts, emojis })}
+                                    className="col-span-3"
+                                />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.sepia}%</span>
+                            </div>
+                             <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="invert" className="col-span-2">Invert</Label>
+                                <Slider
+                                    id="invert"
+                                    value={[filters.invert]}
+                                    max={100}
+                                    step={1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, invert: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, invert: value[0] }, texts, emojis })}
+                                    className="col-span-3"
+                                />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.invert}%</span>
+                            </div>
+                             <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="hueRotate" className="col-span-2">Hue</Label>
+                                <Slider
+                                    id="hueRotate"
+                                    value={[filters.hueRotate]}
+                                    max={360}
+                                    step={1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, hueRotate: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, hueRotate: value[0] }, texts, emojis })}
+                                    className="col-span-3"
+                                />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.hueRotate}°</span>
+                            </div>
+                             <div className="grid grid-cols-6 items-center gap-4">
+                                <Label htmlFor="blur" className="col-span-2">Blur</Label>
+                                <Slider
+                                    id="blur"
+                                    value={[filters.blur]}
+                                    max={10}
+                                    step={0.1}
+                                    onValueChange={(value) => setFilters(f => ({ ...f, blur: value[0] }))}
+                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, blur: value[0] }, texts, emojis })}
+                                    className="col-span-3"
+                                />
+                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.blur.toFixed(1)}px</span>
+                            </div>
                         </div>
                     </div>
                   )}
@@ -769,7 +839,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 className="object-contain" 
                 sizes="(max-width: 448px) 100vw, 448px" 
                 style={{
-                  filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%)`
+                  filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%) grayscale(${filters.grayscale}%) sepia(${filters.sepia}%) invert(${filters.invert}%) hue-rotate(${filters.hueRotate}deg) blur(${filters.blur}px)`
                 }}
               />
               
