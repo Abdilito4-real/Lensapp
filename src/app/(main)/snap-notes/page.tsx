@@ -235,148 +235,197 @@ export default function SnapNotesPage() {
       stopCamera();
   }
 
-  if (imageFiles.length > 0) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      {imageFiles.length > 0 ? (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
               <CardTitle>Your Notes</CardTitle>
-              <CardDescription>You've selected {imageFiles.length} image{imageFiles.length > 1 ? 's' : ''}. Add more or generate your study tools.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <CardDescription>
+                You've selected {imageFiles.length} image
+                {imageFiles.length > 1 ? 's' : ''}. Add more or generate your
+                study tools.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                 {imagePreviews.map((src, index) => (
-                    <div key={src} className="relative group aspect-square">
-                        <Image src={src} alt={`Note preview ${index + 1}`} fill sizes="(max-width: 768px) 50vw, 33vw" className="rounded-lg object-cover" />
-                        <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                            onClick={() => handleRemoveImage(index)}
-                            aria-label="Remove image"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
+                  <div key={src} className="relative group aspect-square">
+                    <Image
+                      src={src}
+                      alt={`Note preview ${index + 1}`}
+                      fill
+                      sizes="(max-width: 768px) 33vw, 25vw"
+                      className="rounded-lg object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={() => handleRemoveImage(index)}
+                      aria-label="Remove image"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ))}
                 <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg text-muted-foreground hover:bg-muted hover:border-primary transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg text-muted-foreground hover:bg-muted hover:border-primary transition-colors"
                 >
-                    <Plus className="h-8 w-8 mb-2" />
-                    <span>Add More</span>
+                  <Plus className="h-6 w-6 mb-1" />
+                  <span className="text-sm">Add More</span>
                 </button>
-            </div>
-          </CardContent>
-          <CardFooter className="p-4 pt-0 flex-col items-stretch gap-4">
-              <div className="flex gap-2">
-                <Button variant="outline" className="w-full" onClick={startCamera}>
-                    <Camera className="mr-2 h-4 w-4" /> Use Camera
-                </Button>
-                 <Button variant="secondary" className="w-full" onClick={reset}>Clear All</Button>
               </div>
-              <form action={(formData) => {
+            </CardContent>
+            <CardFooter className="p-4 pt-0 flex-col items-stretch gap-4">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={startCamera}
+                >
+                  <Camera className="mr-2 h-4 w-4" /> Use Camera
+                </Button>
+                <Button variant="secondary" className="w-full" onClick={reset}>
+                  Clear All
+                </Button>
+              </div>
+              <form
+                action={formData => {
                   if (imageFiles.length > 0) {
                     imageFiles.forEach(file => {
-                        formData.append('photo', file);
+                      formData.append('photo', file);
                     });
                   }
                   formAction(formData);
-              }} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <SubmitButton action="summarize" />
-                      <SubmitButton action="flashcards" />
-                      <SubmitButton action="quiz" />
-                  </div>
+                }}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <SubmitButton action="summarize" />
+                  <SubmitButton action="flashcards" />
+                  <SubmitButton action="quiz" />
+                </div>
               </form>
-          </CardFooter>
-        </Card>
+            </CardFooter>
+          </Card>
 
-        {state.error && (
+          {state.error && (
             <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{state.error}</AlertDescription>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{state.error}</AlertDescription>
             </Alert>
-        )}
+          )}
 
-        {state.result?.summary && (
+          {state.result?.summary && (
             <Card>
-                <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
-                <CardContent><p className="whitespace-pre-wrap">{state.result.summary}</p></CardContent>
+              <CardHeader>
+                <CardTitle>Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap">{state.result.summary}</p>
+              </CardContent>
             </Card>
-        )}
+          )}
 
-        {state.result?.flashcards && (
+          {state.result?.flashcards && (
             <Card>
-                <CardHeader><CardTitle>Flashcards</CardTitle></CardHeader>
-                <CardContent>
-                    <Carousel className="w-full max-w-xs mx-auto">
-                        <CarouselContent>
-                            {state.result.flashcards.map((card, index) => (
-                                <CarouselItem key={index}>
-                                    <Flashcard front={card.front} back={card.back} />
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious />
-                        <CarouselNext />
-                    </Carousel>
-                </CardContent>
+              <CardHeader>
+                <CardTitle>Flashcards</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Carousel className="w-full max-w-xs mx-auto">
+                  <CarouselContent>
+                    {state.result.flashcards.map((card, index) => (
+                      <CarouselItem key={index}>
+                        <Flashcard front={card.front} back={card.back} />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
+              </CardContent>
             </Card>
-        )}
+          )}
 
-        {state.result?.quiz && (
-             <Quiz quiz={state.result.quiz} />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-8">
-        <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">SnapNotes</h1>
-            <p className="max-w-md mx-auto text-muted-foreground md:text-lg">
-                Turn your notes into smart study tools with AI.
-            </p>
+          {state.result?.quiz && <Quiz quiz={state.result.quiz} />}
         </div>
-        <Card className="w-full max-w-md mx-auto">
+      ) : (
+        <div className="space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+              SnapNotes
+            </h1>
+            <p className="max-w-md mx-auto text-muted-foreground md:text-lg">
+              Turn your notes into smart study tools with AI.
+            </p>
+          </div>
+          <Card className="w-full max-w-md mx-auto">
             <CardHeader>
-                <CardTitle>Get Started</CardTitle>
-                <CardDescription>
+              <CardTitle>Get Started</CardTitle>
+              <CardDescription>
                 Upload a photo of your notes or use your camera.
-                </CardDescription>
+              </CardDescription>
             </CardHeader>
             <CardContent>
-                {videoStream ? (
-                     <div className='flex flex-col items-center gap-4'>
-                        <div className='w-full rounded-lg overflow-hidden border'>
-                            <video ref={videoRef} className="w-full h-auto" autoPlay playsInline muted />
-                            <canvas ref={canvasRef} className="hidden" />
-                        </div>
-                        <div className="flex w-full gap-2">
-                            <Button variant="outline" onClick={stopCamera} className="w-full">Cancel</Button>
-                            <Button onClick={takePicture} className="w-full">
-                                <Camera className="mr-2 h-4 w-4" /> Capture
-                            </Button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                         <Button className="w-full" asChild>
-                            <label htmlFor="file-upload" className="cursor-pointer">
-                                <Upload className="mr-2 h-4 w-4" /> Upload Photos
-                                <input id="file-upload" ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
-                            </label>
-                        </Button>
-                        <Button variant="outline" className="w-full" onClick={startCamera}>
-                            <Camera className="mr-2 h-4 w-4" /> Use Camera
-                        </Button>
-                    </div>
-                )}
+              {videoStream ? (
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-full rounded-lg overflow-hidden border">
+                    <video
+                      ref={videoRef}
+                      className="w-full h-auto"
+                      autoPlay
+                      playsInline
+                      muted
+                    />
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+                  <div className="flex w-full gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={stopCamera}
+                      className="w-full"
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={takePicture} className="w-full">
+                      <Camera className="mr-2 h-4 w-4" /> Capture
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    className="w-full"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" /> Upload Photos
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={startCamera}
+                  >
+                    <Camera className="mr-2 h-4 w-4" /> Use Camera
+                  </Button>
+                </div>
+              )}
             </CardContent>
-        </Card>
-    </div>
+          </Card>
+        </div>
+      )}
+    </>
   );
 }
