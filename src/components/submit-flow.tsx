@@ -529,7 +529,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     if (!activeEmojiId) return;
     const newEmojis = emojis.filter(e => e.id !== activeEmojiId);
     setEmojis(newEmojis);
-    recordHistory({ filters, texts, emojis: newEmojis });
+    recordHistory({ filters, texts: newEmojis, emojis: newEmojis });
 
     setActiveEmojiId(null);
     setIsEditPopoverOpen(false);
@@ -566,13 +566,16 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }
   }
 
-  const handlePopoverClose = () => {
-    if (isEditPopoverOpen) {
-      recordHistory({ filters, texts, emojis });
+  const handlePopoverOpenChange = (open: boolean) => {
+    if (!open) {
+      // Record history as the popover closes
+      if (isEditPopoverOpen) {
+        recordHistory({ filters, texts, emojis });
+      }
+      setActiveTextId(null);
+      setActiveEmojiId(null);
     }
-    setIsEditPopoverOpen(false);
-    setActiveTextId(null);
-    setActiveEmojiId(null);
+    setIsEditPopoverOpen(open);
   };
 
   useEffect(() => {
@@ -605,7 +608,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleResetAllEdits}><RefreshCcw className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsCropping(true)}><Crop className="h-5 w-5" /></Button>
               
-              <Popover open={isEditPopoverOpen} onOpenChange={handlePopoverClose}>
+              <Popover open={isEditPopoverOpen} onOpenChange={handlePopoverOpenChange}>
                 <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => { setEditPanel('filters'); setActiveTextId(null); setActiveEmojiId(null); setIsEditPopoverOpen(true)}}>
                         <SlidersHorizontal className="h-5 w-5" />
@@ -831,7 +834,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="h-5 w-5" /></Button>
           </div>
 
-          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); handlePopoverClose();}}>
+          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); handlePopoverOpenChange(false);}}>
               <Image 
                 src={imagePreview} 
                 alt="Submission preview" 
