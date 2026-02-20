@@ -9,17 +9,62 @@ export const users: User[] = [
   { id: 'user-5', name: 'Eli', avatarId: 'user-avatar-5', streak: 18, totalUpvotes: 210, wins: ['submission-5'], friends: ['user-1'], friendRequests: [] },
 ];
 
-const today = new Date();
-const tomorrow = new Date(today);
-tomorrow.setDate(tomorrow.getDate() + 1);
-tomorrow.setHours(8, 0, 0, 0);
+export const dailyChallenges: Omit<Challenge, 'id' | 'date'>[] = [
+  {
+    topic: 'Urban Geometry',
+    description: "Capture the hidden shapes, lines, and patterns within the city's architecture.",
+  },
+  {
+    topic: 'Street Portraits',
+    description: 'Photograph the diverse and interesting faces you encounter on the street.',
+  },
+  {
+    topic: 'Shades of Blue',
+    description: 'Find and photograph scenes dominated by the color blue.',
+  },
+  {
+    topic: 'Minimalist Landscapes',
+    description: 'Capture vast, empty landscapes with a single, compelling subject.',
+  },
+  {
+    topic: 'Food in Motion',
+    description: 'Capture the action of cooking or eating, like a pasta pull or steam rising.',
+  },
+  {
+    topic: 'Shadow Play',
+    description: 'Use strong shadows to create dramatic and abstract compositions.',
+  },
+  {
+    topic: 'Night Lights',
+    description: 'Photograph the vibrant and colorful lights of the city after dark.',
+  },
+];
 
-export const currentChallenge: Challenge = {
-  id: 'challenge-1',
-  topic: 'Urban Geometry',
-  description: 'Capture the hidden shapes, lines, and patterns within the city\'s architecture.',
-  date: tomorrow.toISOString(),
-};
+// Function to get the challenge for the current day
+export function getTodaysChallenge(): Challenge {
+    const today = new Date();
+    // This calculation gives us the day number of the year (e.g., Feb 1 is day 32).
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Use the modulo operator to cycle through the challenges array.
+    const challengeIndex = dayOfYear % dailyChallenges.length;
+    const challengeData = dailyChallenges[challengeIndex];
+
+    // Set the end date for the challenge to 8 AM tomorrow.
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(8, 0, 0, 0);
+
+    return {
+        id: `challenge-${dayOfYear}`,
+        ...challengeData,
+        date: tomorrow.toISOString(),
+    };
+}
+
+
+export const currentChallenge: Challenge = getTodaysChallenge();
+
 
 export const submissions: Submission[] = [
   { 
