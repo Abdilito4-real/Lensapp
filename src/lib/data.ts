@@ -11,32 +11,32 @@ export const users: User[] = [
 
 export const dailyChallenges: Omit<Challenge, 'id' | 'date'>[] = [
   {
-    topic: 'Urban Geometry',
-    description: "Capture the hidden shapes, lines, and patterns within the city's architecture.",
+    topic: 'Campus Landmarks',
+    description: "Showcase an iconic spot on your campus.",
   },
   {
-    topic: 'Street Portraits',
-    description: 'Photograph the diverse and interesting faces you encounter on the street.',
+    topic: 'Dorm Room Life',
+    description: 'Capture the unique personality of your dorm room.',
   },
   {
-    topic: 'Shades of Blue',
-    description: 'Find and photograph scenes dominated by the color blue.',
+    topic: 'The Study Grind',
+    description: 'Show us your study session setup. Late nights, coffee, and books!',
   },
   {
-    topic: 'Minimalist Landscapes',
-    description: 'Capture vast, empty landscapes with a single, compelling subject.',
+    topic: 'School Spirit',
+    description: "Feature your university's colors with pride.",
   },
   {
-    topic: 'Food in Motion',
-    description: 'Capture the action of cooking or eating, like a pasta pull or steam rising.',
+    topic: 'Library Architecture',
+    description: 'Find an interesting angle or detail in the campus library.',
   },
   {
-    topic: 'Shadow Play',
-    description: 'Use strong shadows to create dramatic and abstract compositions.',
+    topic: 'Cafeteria Gourmet',
+    description: 'Make your campus meal look like a masterpiece.',
   },
   {
-    topic: 'Night Lights',
-    description: 'Photograph the vibrant and colorful lights of the city after dark.',
+    topic: 'Life in Motion',
+    description: 'Capture the energy of students between classes or on the quad.',
   },
 ];
 
