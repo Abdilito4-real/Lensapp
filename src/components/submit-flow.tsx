@@ -18,6 +18,8 @@ import {
   Trash2,
   SwitchCamera,
   RefreshCcw,
+  Wand2,
+  Loader2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { ImageCropper } from './image-cropper';
 import Draggable from 'react-draggable';
 import { Input } from '@/components/ui/input';
+import { suggestCaption } from '@/lib/caption-actions';
 
 type Stage = 'select' | 'preview';
 
@@ -156,6 +159,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const isMountedRef = useRef(true);
   const [caption, setCaption] = useState('');
+  const [isCaptionLoading, setIsCaptionLoading] = useState(false);
 
   const [filters, setFilters] = useState(initialFilters);
   const [editPanel, setEditPanel] = useState<'filters' | 'text' | 'emoji' | null>(null);
@@ -526,6 +530,37 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsEditPopoverOpen(false);
   };
   
+  const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+  }
+
+  const handleSuggestCaption = async () => {
+    if (!imageFile) {
+        toast({ title: 'No Image', description: 'Please select an image first.', variant: 'destructive' });
+        return;
+    }
+    setIsCaptionLoading(true);
+    try {
+        const dataUri = await fileToDataUri(imageFile);
+        const result = await suggestCaption(dataUri);
+        if (result.caption) {
+            setCaption(result.caption);
+            toast({ title: 'Caption Suggested!', description: 'The AI has generated a caption for you.' });
+        } else {
+            throw new Error(result.error || 'Failed to get caption.');
+        }
+    } catch(error: any) {
+        toast({ title: 'AI Error', description: error.message || 'Could not suggest a caption.', variant: 'destructive'});
+    } finally {
+        setIsCaptionLoading(false);
+    }
+  }
+
   const handlePopoverClose = () => {
     if (isEditPopoverOpen) {
       recordHistory({ filters, texts, emojis });
@@ -770,13 +805,25 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               ))}
 
               <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
-                <Textarea 
-                  placeholder="Add caption..."
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  className="bg-black/50 border-none text-white placeholder:text-gray-300 focus-visible:ring-0 text-center resize-none"
-                  rows={1}
-                />
+                <div className="relative">
+                    <Textarea 
+                      placeholder="Add caption..."
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      className="bg-black/50 border-none text-white placeholder:text-gray-300 focus-visible:ring-0 text-center resize-none pr-10"
+                      rows={1}
+                    />
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-white hover:bg-white/20 hover:text-white"
+                        onClick={handleSuggestCaption}
+                        disabled={isCaptionLoading}
+                        aria-label="Suggest Caption"
+                    >
+                        {isCaptionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                    </Button>
+                </div>
               </div>
           </div>
           

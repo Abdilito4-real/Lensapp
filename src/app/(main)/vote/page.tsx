@@ -16,6 +16,10 @@ export default function VotePage() {
 
   const handleVote = (submissionId: string) => {
     setVoted(prev => ({ ...prev, [submissionId]: !prev[submissionId] }));
+    toast({
+      title: 'Vote Cast!',
+      description: 'Your vote has been recorded.',
+    });
   };
 
   return (
