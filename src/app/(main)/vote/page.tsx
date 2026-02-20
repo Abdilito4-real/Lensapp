@@ -33,7 +33,10 @@ export default function VotePage() {
   }
 
   const togglePreview = async (submissionId: string, song: Song) => {
-    if (!song.title || !song.artist) return;
+    if (!song.videoId) {
+        toast({ variant: 'destructive', title: 'Cannot play preview', description: 'Song information is missing.' });
+        return;
+    }
 
     if (playingSong === submissionId) {
         stopPlayback();
@@ -42,7 +45,7 @@ export default function VotePage() {
         
         try {
             setPlayingSong(submissionId); // Optimistically set playing state
-            const audioUrl = await getAudioUrl(song.title, song.artist);
+            const audioUrl = await getAudioUrl(song.videoId);
             
             if (!audioUrl) {
                 toast({

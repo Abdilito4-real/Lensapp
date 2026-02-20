@@ -91,7 +91,7 @@ export function MusicSearch({
 
   const handlePlayPreview = async (e: React.MouseEvent, song: Song) => {
     e.stopPropagation();
-    if (!song.title || !song.artist) return;
+    if (!song.videoId) return;
 
     if (previewingSongId === song.id) {
       stopPreview();
@@ -102,7 +102,7 @@ export function MusicSearch({
     setPreviewingSongId(song.id); // Show loading/playing state
 
     try {
-      const audioUrl = await getAudioUrl(song.title, song.artist);
+      const audioUrl = await getAudioUrl(song.videoId);
       
       if (!audioUrl) {
           toast({ variant: 'destructive', title: 'Could not play preview.', description: 'No preview available for this track.' });

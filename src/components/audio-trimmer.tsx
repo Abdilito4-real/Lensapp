@@ -12,6 +12,7 @@ import { getAudioUrl } from '@/lib/get-audio-url';
 interface AudioTrimmerProps {
   songTitle: string;
   songArtist: string;
+  videoId: string;
   onSelectSegment: (startTime: number, endTime: number) => void;
   onClose: () => void;
 }
@@ -19,6 +20,7 @@ interface AudioTrimmerProps {
 export function AudioTrimmer({
   songTitle,
   songArtist,
+  videoId,
   onSelectSegment,
   onClose,
 }: AudioTrimmerProps) {
@@ -41,7 +43,7 @@ export function AudioTrimmer({
     const loadAudio = async () => {
       setIsLoading(true);
       try {
-        const audioUrl = await getAudioUrl(songTitle, songArtist);
+        const audioUrl = await getAudioUrl(videoId);
 
         if (!audioUrl) {
             toast({
@@ -120,7 +122,7 @@ export function AudioTrimmer({
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [songTitle, songArtist]);
+  }, [videoId]);
 
   const generateWaveform = () => {
     const canvas = canvasRef.current;

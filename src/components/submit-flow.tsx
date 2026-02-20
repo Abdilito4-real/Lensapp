@@ -447,7 +447,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setIsPlaying(false);
     setSelectedSong(null);
     
-    if (!song || !song.title || !song.artist) {
+    if (!song || !song.videoId) {
+      if(song) setIsMusicSearchOpen(false); // Close dialog if a song without id was selected
       return;
     }
 
@@ -455,7 +456,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     setSelectedSong(song);
     setIsSongLoading(true);
 
-    getAudioUrl(song.title, song.artist).then((audioUrl) => {
+    getAudioUrl(song.videoId).then((audioUrl) => {
       if (!isMountedRef.current) return;
       if (!audioUrl) {
           toast({ 
@@ -1028,10 +1029,11 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                 onCropComplete={handleCropComplete}
             />
         )}
-        {showTrimmer && selectedSong && (
+        {showTrimmer && selectedSong && selectedSong.videoId && (
             <AudioTrimmer
               songTitle={selectedSong.title}
               songArtist={selectedSong.artist}
+              videoId={selectedSong.videoId}
               onSelectSegment={handleSegmentSelected}
               onClose={() => setShowTrimmer(false)}
             />
