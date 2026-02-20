@@ -9,7 +9,10 @@ export async function getAudioUrl(videoId: string): Promise<string | null> {
           details: 'Received an invalid response.' 
         }));
         // Construct a more detailed error message
-        const errorMessage = `${errorData.error} Details: ${errorData.details || 'N/A'}`;
+        const detailsString = typeof errorData.details === 'object' && errorData.details !== null
+          ? JSON.stringify(errorData.details)
+          : errorData.details;
+        const errorMessage = `${errorData.error} Details: ${detailsString || 'N/A'}`;
         throw new Error(errorMessage);
     }
     const data = await response.json();
