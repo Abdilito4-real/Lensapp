@@ -160,7 +160,7 @@ const DraggableEmoji = ({
   );
 };
 
-export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
+export function SubmitFlow({ challengeTopic, challengeDescription }: { challengeTopic: string; challengeDescription: string; }) {
   const [stage, setStage] = useState<Stage>('select');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -950,7 +950,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       <CardHeader>
         <CardTitle>Submit to "{challengeTopic}"</CardTitle>
         <CardDescription>
-          Choose a photo from your library or use your camera.
+          {challengeDescription}
         </CardDescription>
       </CardHeader>
       <CardContent>
