@@ -2,20 +2,16 @@
   "name": "Lens - Daily Photo Challenge",
   "short_name": "Lens",
   "description": "Join daily photo challenges, vote on submissions, and climb the leaderboard.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/logo.png",
+      "sizes": "48x48 72x72 96x96 128x128 256x256 512x512",
       "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/logo.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "theme_color": "#FDF8F6",
+  "background_color": "#FDF8F6",
+  "display": "standalone",
+  "start_url": "/"
 }

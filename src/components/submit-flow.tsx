@@ -515,12 +515,13 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
     try {
         const response = await fetch(croppedImageSrc);
         const blob = await response.blob();
-        const newFile = new File([blob], imageFile?.name || 'cropped.jpg', {
+        const tempFile = new File([blob], imageFile?.name || 'cropped.jpg', {
             type: blob.type,
         });
-        setImageFile(newFile);
+        const resizedFile = await resizeImage(tempFile, 1920, 1080);
+        setImageFile(resizedFile);
     } catch (error) {
-        console.error("Could not convert blob to file:", error);
+        console.error("Could not process cropped image:", error);
         toast({
             variant: 'destructive',
             title: 'Failed to apply crop.',
@@ -660,7 +661,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
             throw new Error(result.error || 'Failed to get caption.');
         }
     } catch(error: any) {
-        toast({ title: 'AI Error', description: error.message || 'Could not suggest a caption.', variant: 'destructive'});
+        toast({ title: 'AI Error', description: error.message || 'Could not suggest a caption. Please try again.', variant: 'destructive'});
     } finally {
         setIsCaptionLoading(false);
     }
