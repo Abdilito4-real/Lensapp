@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import type { Song } from "./musicService";
 
 export type User = {
   id: string;
@@ -26,7 +25,6 @@ export type Submission = {
   imageId: string;
   upvotes: number;
   timestamp: string; // ISO string
-  song?: Song;
 };
 
 export type Badge = {

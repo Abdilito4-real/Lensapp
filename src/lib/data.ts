@@ -28,17 +28,7 @@ export const submissions: Submission[] = [
     challengeId: 'challenge-0', 
     imageId: 'submission-1', 
     upvotes: 42, 
-    timestamp: '2023-10-26T10:00:00Z',
-    song: {
-      id: '2022695286',
-      videoId: '_zB3R32rk3U',
-      title: 'Paint The Town Red',
-      artist: 'Doja Cat',
-      album: 'Scarlet',
-      thumbnail: 'https://p2.music.126.net/wns4gS-nJXx_e80bKx-Q8A==/109951168341822557.jpg?param=300x300',
-      startTime: 30,
-      endTime: 50,
-    }
+    timestamp: '2023-10-26T10:00:00Z'
   },
   { id: 'submission-2', userId: 'user-2', challengeId: 'challenge-0', imageId: 'submission-2', upvotes: 35, timestamp: '2023-10-26T11:00:00Z' },
   { id: 'submission-3', userId: 'user-3', challengeId: 'challenge-0', imageId: 'submission-3', upvotes: 68, timestamp: '2023-10-26T12:00:00Z' },

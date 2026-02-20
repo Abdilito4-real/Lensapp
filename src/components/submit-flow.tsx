@@ -7,9 +7,6 @@ import {
   Upload,
   Camera,
   ArrowLeft,
-  Play,
-  Pause,
-  Music,
   Crop,
   SlidersHorizontal,
   Type,
@@ -20,25 +17,19 @@ import {
   RotateCcw,
   Trash2,
   SwitchCamera,
+  RefreshCcw,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { MusicSearch } from './music-search';
-import type { Song } from '@/lib/musicService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { ImageCropper } from './image-cropper';
 import Draggable from 'react-draggable';
 import { Input } from '@/components/ui/input';
-import { AudioTrimmer } from './audio-trimmer';
-import { LensLoader } from './lens-loader';
-import { Howl } from 'howler';
-import { getAudioUrl } from '@/lib/get-audio-url';
 
 type Stage = 'select' | 'preview';
 
@@ -156,7 +147,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [stage, setStage] = useState<Stage>('select');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
@@ -164,19 +154,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const router = useRouter();
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isSongLoading, setIsSongLoading] = useState(false);
-  const audioRef = useRef<Howl | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
   const [caption, setCaption] = useState('');
-  const [isMusicSearchOpen, setIsMusicSearchOpen] = useState(false);
 
   const [filters, setFilters] = useState(initialFilters);
   const [editPanel, setEditPanel] = useState<'filters' | 'text' | 'emoji' | null>(null);
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
-  const [showTrimmer, setShowTrimmer] = useState(false);
 
   const [texts, setTexts] = useState<TextElement[]>([]);
   const [emojis, setEmojis] = useState<EmojiElement[]>([]);
@@ -307,17 +291,11 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   };
   
   const resetFlow = () => {
-    if (audioRef.current) {
-      audioRef.current.unload();
-      audioRef.current = null;
-    }
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (imagePreview && imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview);
     }
     setImagePreview(null);
     setImageFile(null);
-    setSelectedSong(null);
     setFilters(initialFilters);
     setTexts([]);
     setEmojis([]);
@@ -403,171 +381,27 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
     toast({
       title: 'Submission Successful!',
-      description: selectedSong
-        ? `Your photo with "${selectedSong.title}" has been submitted.`
-        : 'Your photo has been entered into the challenge.'
+      description: 'Your photo has been entered into the challenge.'
     });
     router.push('/');
   }
 
-  const togglePlayback = () => {
-    const sound = audioRef.current;
-    if (!sound || !selectedSong) return;
-
-    if (sound.playing()) {
-      sound.pause();
-    } else {
-      const { startTime = 0, endTime } = selectedSong;
-      const currentTime = sound.seek() as number;
-
-      if (endTime && currentTime >= endTime) {
-        sound.seek(startTime);
-      }
-      
-      sound.play();
-
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (endTime) {
-        const remainingDuration = (endTime - (sound.seek() as number)) * 1000;
-        if (remainingDuration > 0) {
-            timeoutRef.current = setTimeout(() => {
-                sound.pause();
-            }, remainingDuration);
-        }
-      }
-    }
-  };
-
-  const handleSongSelected = (song: Song | null) => {
-    if (audioRef.current) {
-      audioRef.current.unload();
-      audioRef.current = null;
-    }
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setIsPlaying(false);
-    setSelectedSong(null);
-    
-    if (!song || !song.videoId) {
-      if(song) setIsMusicSearchOpen(false); // Close dialog if a song without id was selected
-      return;
-    }
-
-    setIsMusicSearchOpen(false);
-    setSelectedSong(song);
-    setIsSongLoading(true);
-
-    getAudioUrl(song.videoId).then((audioUrl) => {
-      if (!isMountedRef.current) return;
-      if (!audioUrl) {
-          toast({ 
-              variant: 'destructive', 
-              title: 'Audio Error',
-              description: 'No preview available for this track.' 
-          });
-          setIsSongLoading(false);
-          setSelectedSong(null);
-          return;
-      }
-
-      const sound = new Howl({
-        src: [audioUrl],
-        format: ['mp3'],
-        html5: true,
-        onplay: () => {
-          if (isMountedRef.current) setIsPlaying(true);
-        },
-        onpause: () => {
-          if (isMountedRef.current) setIsPlaying(false);
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        },
-        onend: () => {
-          if (isMountedRef.current) setIsPlaying(false);
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        },
-        onload: () => {
-            if (!isMountedRef.current) return;
-            setIsSongLoading(false);
-            
-            const { startTime = 0 } = song;
-            let { endTime } = song;
-            const songDuration = sound.duration();
-
-            if(endTime && songDuration && endTime > songDuration) {
-              song.endTime = songDuration;
-              endTime = songDuration;
-            }
-
-            sound.seek(startTime);
-            sound.play();
-
-            if (endTime) {
-              const duration = (endTime - startTime) * 1000;
-              if (duration > 0) {
-                timeoutRef.current = setTimeout(() => {
-                  sound.pause();
-                }, duration);
-              }
-            }
-        },
-        onloaderror: (id, error) => {
-          console.error('Howl load error:', error, '| URL:', audioUrl);
-          if (isMountedRef.current) {
-            toast({ variant: 'destructive', title: 'Failed to load song.' });
-            setIsSongLoading(false);
-            setSelectedSong(null);
-          }
-        },
-        onplayerror: (id, error) => {
-            console.error('Howl play error:', error);
-            if (isMountedRef.current) {
-                toast({ variant: 'destructive', title: 'Playback failed.', description: 'Please try another song.' });
-                setIsSongLoading(false);
-                setSelectedSong(null);
-            }
-        }
-      });
-      
-      audioRef.current = sound;
-    }).catch((error: any) => {
-        console.error("Failed to get audio URL:", error);
-        if (isMountedRef.current) {
-          toast({ 
-              variant: 'destructive', 
-              title: 'Audio Error',
-              description: error.message || 'An unexpected error occurred.' 
-          });
-          setIsSongLoading(false);
-          setSelectedSong(null);
-        }
-    });
-  };
-
-  const handleSegmentSelected = (startTime: number, endTime: number) => {
-    if (selectedSong) {
-      handleSongSelected({
-        ...selectedSong,
-        startTime,
-        endTime,
-        duration: endTime - startTime,
-      });
-    }
-    setShowTrimmer(false);
-  };
-  
-  const handleRemoveSong = () => {
-    if (audioRef.current) {
-      audioRef.current.unload();
-      audioRef.current = null;
-    }
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setIsPlaying(false);
-    setSelectedSong(null);
-  };
-  
   const handleResetFilters = () => {
     const newFilters = initialFilters;
     setFilters(newFilters);
     recordHistory({ filters: newFilters, texts, emojis });
+  }
+
+  const handleResetAllEdits = () => {
+    const freshState: EditorState = { filters: initialFilters, texts: [], emojis: [] };
+    setFilters(freshState.filters);
+    setTexts(freshState.texts);
+    setEmojis(freshState.emojis);
+    recordHistory(freshState);
+    toast({
+        title: 'Edits Reset',
+        description: 'All filters, text, and emojis have been cleared.',
+    });
   }
   
   const handleCropComplete = async (croppedImageSrc: string) => {
@@ -705,8 +539,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-      audioRef.current?.unload();
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
@@ -730,7 +562,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
           </header>
 
           <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2 flex-shrink-0">
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsMusicSearchOpen(true)}><Music className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleResetAllEdits}><RefreshCcw className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsCropping(true)}><Crop className="h-5 w-5" /></Button>
               
               <Popover open={isEditPopoverOpen} onOpenChange={handlePopoverClose}>
@@ -938,59 +770,6 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               ))}
 
               <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
-                {selectedSong && (
-                    <Card className="p-3 flex items-center justify-between bg-black/50 border-white/20 text-white">
-                        <div className="flex items-center gap-3 min-w-0">
-                        {selectedSong.thumbnail && (
-                            <Image
-                            src={selectedSong.thumbnail}
-                            alt={selectedSong.title}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 rounded object-cover flex-shrink-0"
-                            />
-                        )}
-                        <div className="min-w-0">
-                            <p className="font-medium truncate">{selectedSong.title}</p>
-                            <p className="text-sm text-white/70 truncate">
-                            {selectedSong.artist}
-                            </p>
-                        </div>
-                        </div>
-                        <div className="flex items-center">
-                            {isSongLoading ? (
-                                <LensLoader className="w-5 h-5" />
-                            ) : (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setShowTrimmer(true)}
-                                        className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
-                                    >
-                                        <SlidersHorizontal className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={togglePlayback}
-                                        className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
-                                    >
-                                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={handleRemoveSong}
-                                        className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </Card>
-                )}
                 <Textarea 
                   placeholder="Add caption..."
                   value={caption}
@@ -1007,35 +786,12 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
               </Button>
           </div>
         </div>
-        <Dialog open={isMusicSearchOpen} onOpenChange={setIsMusicSearchOpen}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Add a song</DialogTitle>
-                    <DialogDescription>
-                        Search for a song and select a segment to add to your photo.
-                    </DialogDescription>
-                </DialogHeader>
-                <MusicSearch 
-                  key={String(isMusicSearchOpen)}
-                  onSelectSong={handleSongSelected}
-                />
-            </DialogContent>
-        </Dialog>
-
+        
         {isCropping && imagePreview && (
             <ImageCropper 
                 imageSrc={imagePreview}
                 onClose={() => setIsCropping(false)}
                 onCropComplete={handleCropComplete}
-            />
-        )}
-        {showTrimmer && selectedSong && selectedSong.videoId && (
-            <AudioTrimmer
-              songTitle={selectedSong.title}
-              songArtist={selectedSong.artist}
-              videoId={selectedSong.videoId}
-              onSelectSegment={handleSegmentSelected}
-              onClose={() => setShowTrimmer(false)}
             />
         )}
       </>
