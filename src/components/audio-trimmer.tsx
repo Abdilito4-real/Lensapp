@@ -88,9 +88,13 @@ export function AudioTrimmer({
         });
 
         soundRef.current = sound;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load audio:', error);
-        toast({ variant: 'destructive', title: 'No preview available for this track.'});
+        toast({ 
+            variant: 'destructive', 
+            title: 'Audio Error',
+            description: error.message || 'Could not load audio for trimming.'
+        });
         setIsLoading(false);
         onClose();
       }

@@ -88,9 +88,13 @@ export default function VotePage() {
               }
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Playback failed:", error);
-            toast({ variant: 'destructive', title: 'No preview available for this track.' })
+            toast({ 
+                variant: 'destructive', 
+                title: 'Playback Error',
+                description: error.message || 'No preview available for this track.' 
+            })
             setPlayingSong(null);
         }
     }

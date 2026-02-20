@@ -140,9 +140,13 @@ export function MusicSearch({
       });
       previewAudioRef.current = sound;
       sound.play();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Preview failed:', error);
-      toast({ variant: 'destructive', title: 'No preview available for this track.' });
+      toast({
+        variant: 'destructive',
+        title: 'Music Preview Error',
+        description: error.message || 'Could not play preview.',
+      });
       stopPreview();
     }
   };

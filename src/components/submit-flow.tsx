@@ -517,10 +517,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       });
       
       audioRef.current = sound;
-    }).catch((error) => {
+    }).catch((error: any) => {
         console.error("Failed to get audio URL:", error);
         if (isMountedRef.current) {
-          toast({ variant: 'destructive', title: 'No preview available for this track.' });
+          toast({ 
+              variant: 'destructive', 
+              title: 'Audio Error',
+              description: error.message || 'No preview available for this track.' 
+          });
           setIsSongLoading(false);
           setSelectedSong(null);
         }
