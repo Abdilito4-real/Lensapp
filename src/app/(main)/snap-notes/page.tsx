@@ -235,6 +235,43 @@ export default function SnapNotesPage() {
       stopCamera();
   }
 
+  // Camera View
+  if (videoStream) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Use Camera</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-full rounded-lg overflow-hidden border">
+              <video
+                ref={videoRef}
+                className="w-full h-auto"
+                autoPlay
+                playsInline
+                muted
+              />
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+            <div className="flex w-full gap-2">
+              <Button
+                variant="outline"
+                onClick={stopCamera}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+              <Button onClick={takePicture} className="w-full">
+                <Camera className="mr-2 h-4 w-4" /> Capture
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <input
@@ -380,33 +417,7 @@ export default function SnapNotesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {videoStream ? (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-full rounded-lg overflow-hidden border">
-                    <video
-                      ref={videoRef}
-                      className="w-full h-auto"
-                      autoPlay
-                      playsInline
-                      muted
-                    />
-                    <canvas ref={canvasRef} className="hidden" />
-                  </div>
-                  <div className="flex w-full gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={stopCamera}
-                      className="w-full"
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={takePicture} className="w-full">
-                      <Camera className="mr-2 h-4 w-4" /> Capture
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
+              <div className="space-y-4">
                   <Button
                     className="w-full"
                     onClick={() => fileInputRef.current?.click()}
@@ -421,7 +432,6 @@ export default function SnapNotesPage() {
                     <Camera className="mr-2 h-4 w-4" /> Use Camera
                   </Button>
                 </div>
-              )}
             </CardContent>
           </Card>
         </div>
