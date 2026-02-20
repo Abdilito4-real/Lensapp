@@ -232,10 +232,12 @@ export default function SnapNotesPage() {
     return (
       <div className="space-y-6">
         <Card>
-          <CardContent className="p-0 relative">
-            <Image src={imagePreview} alt="Notes preview" width={500} height={500} className="w-full h-auto object-contain rounded-t-lg" />
+          <CardContent className="p-4">
+            <div className="flex justify-center">
+                <Image src={imagePreview} alt="Notes preview" width={500} height={500} className="rounded-lg object-contain w-auto h-auto max-h-96" />
+            </div>
           </CardContent>
-          <CardFooter className="p-4 flex-col items-stretch gap-4">
+          <CardFooter className="p-4 pt-0 flex-col items-stretch gap-4">
               <Button variant="outline" onClick={reset}>Choose a different image</Button>
               <form action={(formData) => {
                   if (imageFile) {
