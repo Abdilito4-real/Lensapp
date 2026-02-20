@@ -19,6 +19,7 @@ import {
   X,
   RotateCcw,
   Trash2,
+  SwitchCamera,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -161,6 +162,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   const [isCameraOn, setIsCameraOn] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSongLoading, setIsSongLoading] = useState(false);
@@ -243,9 +245,13 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = async (mode: 'user' | 'environment') => {
+    if (isCameraOn && videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
@@ -253,7 +259,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       }
     } catch (err) {
       console.error("Error accessing camera: ", err);
-      toast({ title: 'Camera Error', description: 'Could not access the camera.', variant: 'destructive' });
+      toast({ title: 'Camera Error', description: 'Could not access the camera. Please ensure permissions are granted.', variant: 'destructive' });
+      setIsCameraOn(false);
     }
   };
 
@@ -264,6 +271,12 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       setIsCameraOn(false);
     }
   };
+  
+  const toggleFacingMode = () => {
+    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newMode);
+    startCamera(newMode);
+  };
 
   const takePicture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -273,7 +286,14 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
       canvas.height = video.videoHeight;
       const context = canvas.getContext('2d');
       if (context) {
-        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        if (facingMode === 'user') {
+            context.save();
+            context.scale(-1, 1);
+            context.drawImage(video, -video.videoWidth, 0, video.videoWidth, video.videoHeight);
+            context.restore();
+        } else {
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        }
         const dataUrl = canvas.toDataURL('image/jpeg');
         canvas.toBlob(blob => {
           if (blob) {
@@ -1019,9 +1039,24 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
         <div className="space-y-4">
             {isCameraOn ? (
               <div className='flex flex-col items-center gap-4'>
-                <div className='w-full rounded-lg overflow-hidden border'>
-                  <video ref={videoRef} className="w-full h-auto" autoPlay playsInline />
+                <div className='w-full rounded-lg overflow-hidden border relative'>
+                  <video
+                    ref={videoRef}
+                    className="w-full h-auto"
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)' }}
+                  />
                   <canvas ref={canvasRef} className="hidden" />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={toggleFacingMode}
+                    className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 hover:text-white rounded-full z-10"
+                  >
+                    <SwitchCamera className="h-5 w-5" />
+                  </Button>
                 </div>
                 <div className="flex w-full gap-2">
                     <Button variant="outline" onClick={stopCamera} className="w-full">Cancel</Button>
@@ -1038,7 +1073,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
                     <input id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                   </label>
                 </Button>
-                <Button variant="outline" className="w-full" onClick={startCamera}>
+                <Button variant="outline" className="w-full" onClick={() => startCamera(facingMode)}>
                   <Camera className="mr-2 h-4 w-4" /> Use Camera
                 </Button>
               </>
