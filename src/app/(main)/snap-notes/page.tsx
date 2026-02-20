@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle, X, Plus } from 'lucide-react';
+import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle, X, Plus, SwitchCamera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateStudyTools } from '@/lib/studyactions';
 import type { SnapNotesOutput } from '@/ai/flows/snap-notes-flow';
@@ -151,6 +151,7 @@ export default function SnapNotesPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
   const [state, formAction] = useActionState(generateStudyTools, { result: undefined, error: undefined });
   const { toast } = useToast();
@@ -181,19 +182,29 @@ export default function SnapNotesPage() {
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = async (mode: 'user' | 'environment') => {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
       setVideoStream(stream);
     } catch (err) {
       console.error("Error accessing camera: ", err);
       toast({ title: 'Camera Error', description: 'Could not access the camera. Please ensure permissions are granted.', variant: 'destructive' });
+      setVideoStream(null);
     }
   };
 
   const stopCamera = () => {
     videoStream?.getTracks().forEach(track => track.stop());
     setVideoStream(null);
+  };
+  
+  const toggleFacingMode = () => {
+    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newMode);
+    startCamera(newMode);
   };
 
   const takePicture = () => {
@@ -204,7 +215,14 @@ export default function SnapNotesPage() {
       canvas.height = video.videoHeight;
       const context = canvas.getContext('2d');
       if (context) {
-        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        if (facingMode === 'user') {
+            context.save();
+            context.scale(-1, 1);
+            context.drawImage(video, -video.videoWidth, 0, video.videoWidth, video.videoHeight);
+            context.restore();
+        } else {
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        }
         canvas.toBlob(async (blob) => {
           if (blob) {
             const file = new File([blob], "snapnote.jpg", { type: "image/jpeg" });
@@ -247,15 +265,24 @@ export default function SnapNotesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-4">
-            <div className="w-full rounded-lg overflow-hidden border">
+            <div className="w-full rounded-lg overflow-hidden border relative">
               <video
                 ref={videoRef}
                 className="w-full h-auto"
                 autoPlay
                 playsInline
                 muted
+                style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)' }}
               />
               <canvas ref={canvasRef} className="hidden" />
+               <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={toggleFacingMode}
+                  className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 hover:text-white rounded-full"
+                >
+                  <SwitchCamera className="h-5 w-5" />
+                </Button>
             </div>
             <div className="flex w-full gap-2">
               <Button
@@ -332,7 +359,7 @@ export default function SnapNotesPage() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={startCamera}
+                  onClick={() => startCamera(facingMode)}
                 >
                   <Camera className="mr-2 h-4 w-4" /> Use Camera
                 </Button>
@@ -430,7 +457,7 @@ export default function SnapNotesPage() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={startCamera}
+                    onClick={() => startCamera(facingMode)}
                   >
                     <Camera className="mr-2 h-4 w-4" /> Use Camera
                   </Button>
