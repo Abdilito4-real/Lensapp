@@ -13,7 +13,7 @@ export async function GET(
     }
 
     try {
-        const apiUrl = `${BASE_URL}/api/play/${videoId}`;
+        const apiUrl = `${BASE_URL}/play/${videoId}`;
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
