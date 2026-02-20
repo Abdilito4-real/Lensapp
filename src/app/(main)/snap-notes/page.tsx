@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useRef, type ChangeEvent, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,7 +101,7 @@ export default function SnapNotesPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [state, formAction] = useFormState(generateStudyTools, { result: undefined, error: undefined });
+  const [state, formAction] = useActionState(generateStudyTools, { result: undefined, error: undefined });
   const { toast } = useToast();
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
