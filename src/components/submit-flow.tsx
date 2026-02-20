@@ -886,60 +886,70 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
     );
   }
 
-  // Original 'select' stage
+  // Select stage
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Submit to "{challengeTopic}"</CardTitle>
-        <CardDescription>
-          {challengeDescription}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-            {videoStream ? (
-              <div className='flex flex-col items-center gap-4'>
-                <div className='w-full rounded-lg overflow-hidden border relative'>
-                  <video
-                    ref={videoRef}
-                    className="w-full h-auto"
-                    autoPlay
-                    playsInline
-                    muted
-                    style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)' }}
-                  />
-                  <canvas ref={canvasRef} className="hidden" />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={toggleFacingMode}
-                    className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 hover:text-white rounded-full z-10"
-                  >
-                    <SwitchCamera className="h-5 w-5" />
-                  </Button>
+    <div className="w-full max-w-lg mx-auto">
+        <div className="space-y-8">
+            <div className="text-center">
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">Submit Your Photo</h1>
+                <p className="max-w-md mx-auto text-muted-foreground md:text-lg">
+                    Upload your best shot for today's challenge.
+                </p>
+            </div>
+            <Card className="w-full max-w-md mx-auto">
+            <CardHeader>
+                <CardTitle>Challenge: {challengeTopic}</CardTitle>
+                <CardDescription>
+                {challengeDescription}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    {videoStream ? (
+                      <div className='flex flex-col items-center gap-4'>
+                        <div className='w-full rounded-lg overflow-hidden border relative'>
+                          <video
+                            ref={videoRef}
+                            className="w-full h-auto"
+                            autoPlay
+                            playsInline
+                            muted
+                            style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)' }}
+                          />
+                          <canvas ref={canvasRef} className="hidden" />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={toggleFacingMode}
+                            className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 hover:text-white rounded-full z-10"
+                          >
+                            <SwitchCamera className="h-5 w-5" />
+                          </Button>
+                        </div>
+                        <div className="flex w-full gap-2">
+                            <Button variant="outline" onClick={stopCamera} className="w-full">Cancel</Button>
+                            <Button onClick={takePicture} className="w-full">
+                              <Camera className="mr-2 h-4 w-4" /> Capture
+                            </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Button className="w-full h-12 text-base" asChild>
+                          <label htmlFor="file-upload" className="cursor-pointer">
+                            <Upload className="mr-2 h-5 w-5" /> Upload Photo
+                            <input id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                          </label>
+                        </Button>
+                        <Button variant="outline" className="w-full h-12 text-base" onClick={() => startCamera(facingMode)}>
+                          <Camera className="mr-2 h-5 w-5" /> Use Camera
+                        </Button>
+                      </>
+                    )}
                 </div>
-                <div className="flex w-full gap-2">
-                    <Button variant="outline" onClick={stopCamera} className="w-full">Cancel</Button>
-                    <Button onClick={takePicture} className="w-full">
-                      <Camera className="mr-2 h-4 w-4" /> Capture
-                    </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <Button className="w-full h-12 text-base" asChild>
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <Upload className="mr-2 h-5 w-5" /> Upload Photo
-                    <input id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </label>
-                </Button>
-                <Button variant="outline" className="w-full h-12 text-base" onClick={() => startCamera(facingMode)}>
-                  <Camera className="mr-2 h-5 w-5" /> Use Camera
-                </Button>
-              </>
-            )}
+            </CardContent>
+            </Card>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }
