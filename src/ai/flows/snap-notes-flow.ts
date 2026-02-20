@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const SnapNotesInputSchema = z.object({
+const SnapNotesInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
@@ -31,7 +31,7 @@ const QuizQuestionSchema = z.object({
     answer: z.string().describe("The correct answer from the options."),
 });
 
-export const SnapNotesOutputSchema = z.object({
+const SnapNotesOutputSchema = z.object({
   summary: z.string().optional().describe("A concise summary of the key points from the provided text."),
   flashcards: z.array(FlashcardSchema).optional().describe("A list of flashcards with front and back content."),
   quiz: z.array(QuizQuestionSchema).optional().describe("A list of multiple-choice quiz questions."),
