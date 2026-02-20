@@ -457,6 +457,16 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
     getAudioUrl(song.title, song.artist).then((audioUrl) => {
       if (!isMountedRef.current) return;
+      if (!audioUrl) {
+          toast({ 
+              variant: 'destructive', 
+              title: 'Audio Error',
+              description: 'No preview available for this track.' 
+          });
+          setIsSongLoading(false);
+          setSelectedSong(null);
+          return;
+      }
 
       const sound = new Howl({
         src: [audioUrl],
@@ -523,7 +533,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
           toast({ 
               variant: 'destructive', 
               title: 'Audio Error',
-              description: error.message || 'No preview available for this track.' 
+              description: error.message || 'An unexpected error occurred.' 
           });
           setIsSongLoading(false);
           setSelectedSong(null);

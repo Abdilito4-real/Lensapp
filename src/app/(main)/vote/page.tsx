@@ -44,6 +44,16 @@ export default function VotePage() {
             setPlayingSong(submissionId); // Optimistically set playing state
             const audioUrl = await getAudioUrl(song.title, song.artist);
             
+            if (!audioUrl) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Playback Error',
+                    description: 'No preview available for this track.'
+                });
+                setPlayingSong(null);
+                return;
+            }
+
             const sound = new Howl({
                 src: [audioUrl],
                 format: ['mp3'],
@@ -93,7 +103,7 @@ export default function VotePage() {
             toast({ 
                 variant: 'destructive', 
                 title: 'Playback Error',
-                description: error.message || 'No preview available for this track.' 
+                description: error.message || 'An unexpected error occurred.' 
             })
             setPlayingSong(null);
         }

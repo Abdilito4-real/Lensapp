@@ -1,4 +1,4 @@
-export async function getAudioUrl(title: string, artist: string): Promise<string> {
+export async function getAudioUrl(title: string, artist: string): Promise<string | null> {
   const tokenResponse = await fetch('/api/spotify-token');
   const tokenText = await tokenResponse.text();
 
@@ -37,6 +37,6 @@ export async function getAudioUrl(title: string, artist: string): Promise<string
   const searchData = JSON.parse(searchBody);
 
   const previewUrl = searchData.tracks?.items?.[0]?.preview_url;
-  if (!previewUrl) throw new Error('No preview available for this track');
+  if (!previewUrl) return null;
   return previewUrl;
 }

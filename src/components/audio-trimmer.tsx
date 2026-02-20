@@ -43,6 +43,17 @@ export function AudioTrimmer({
       try {
         const audioUrl = await getAudioUrl(songTitle, songArtist);
 
+        if (!audioUrl) {
+            toast({
+                variant: 'destructive',
+                title: 'Audio Error',
+                description: 'No audio preview is available for this song to create a clip.'
+            });
+            setIsLoading(false);
+            onClose();
+            return;
+        }
+
         const sound = new Howl({
           src: [audioUrl],
           format: ['mp3'],

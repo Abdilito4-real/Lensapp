@@ -104,6 +104,12 @@ export function MusicSearch({
     try {
       const audioUrl = await getAudioUrl(song.title, song.artist);
       
+      if (!audioUrl) {
+          toast({ variant: 'destructive', title: 'Could not play preview.', description: 'No preview available for this track.' });
+          stopPreview();
+          return;
+      }
+
       const sound = new Howl({
         src: [audioUrl],
         format: ['mp3'],
