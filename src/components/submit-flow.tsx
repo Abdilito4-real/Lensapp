@@ -52,6 +52,7 @@ type TextElement = {
   position: { x: number; y: number };
   color: string;
   fontFamily: string;
+  fontSize: number;
 };
 
 type EmojiElement = {
@@ -93,13 +94,13 @@ const DraggableText = ({
   text,
   onTextUpdate,
   onDragStop,
-  onDoubleClick,
+  onClick,
   isActive,
 }: {
   text: TextElement;
   onTextUpdate: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onDragStop: (e: any, data: { x: number; y: number }) => void;
-  onDoubleClick: (e: React.MouseEvent) => void;
+  onClick: (e: React.MouseEvent) => void;
   isActive: boolean;
 }) => {
   const nodeRef = useRef(null);
@@ -116,15 +117,16 @@ const DraggableText = ({
           "absolute cursor-move p-2 rounded-lg",
           isActive && "ring-2 ring-primary ring-offset-2 ring-offset-black/50"
         )}
-        onDoubleClick={onDoubleClick}
+        onClick={onClick}
       >
         <Textarea
           value={text.content}
           onChange={onTextUpdate}
-          className="bg-transparent border-none focus-visible:ring-2 focus-visible:ring-primary resize-none text-center text-2xl font-bold p-0"
+          className="bg-transparent border-none focus-visible:ring-2 focus-visible:ring-primary resize-none text-center font-bold p-0"
           style={{
             color: text.color,
             fontFamily: text.fontFamily,
+            fontSize: `${text.fontSize}px`,
             textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
           }}
           rows={1}
@@ -137,12 +139,12 @@ const DraggableText = ({
 const DraggableEmoji = ({
   emoji,
   onDragStop,
-  onDoubleClick,
+  onClick,
   isActive,
 }: {
   emoji: EmojiElement;
   onDragStop: (e: any, data: { x: number; y: number }) => void;
-  onDoubleClick: (e: React.MouseEvent) => void;
+  onClick: (e: React.MouseEvent) => void;
   isActive: boolean;
 }) => {
   const nodeRef = useRef(null);
@@ -163,7 +165,7 @@ const DraggableEmoji = ({
           fontSize: `${emoji.size}px`,
           textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
         }}
-        onDoubleClick={onDoubleClick}
+        onClick={onClick}
       >
         {emoji.content}
       </div>
@@ -392,7 +394,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
     });
 
     texts.forEach(text => {
-        const fontSize = 32 * Math.min(scaleX, scaleY);
+        const fontSize = text.fontSize * Math.min(scaleX, scaleY);
         const genericFamily = fonts.find(f => f.name === text.fontFamily)?.family || 'sans-serif';
         ctx.font = `bold ${fontSize}px "${text.fontFamily}", ${genericFamily}`;
         ctx.fillStyle = text.color;
@@ -405,7 +407,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
         ctx.shadowBlur = 4 * Math.min(scaleX, scaleY);
         
         const textX = (text.position.x + previewWidth / 2) * scaleX;
-        const textY = (text.position.y + 32) * scaleY;
+        const textY = (text.position.y + text.fontSize) * scaleY;
         
         ctx.fillText(text.content, textX, textY);
     });
@@ -480,6 +482,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
       position: { x: 0, y: 0 },
       color: '#FFFFFF',
       fontFamily: 'Inter',
+      fontSize: 32,
     };
     const newTexts = [...texts, newText];
     setTexts(newTexts);
@@ -509,6 +512,13 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
   const handleFontChange = (fontFamily: string) => {
     if (!activeTextId) return;
     setTexts(texts.map(t => (t.id === activeTextId ? { ...t, fontFamily } : t)));
+  };
+  
+  const handleFontSizeChange = (value: number[]) => {
+    if (!activeTextId) return;
+    setTexts(
+      texts.map(t => (t.id === activeTextId ? { ...t, fontSize: value[0] } : t))
+    );
   };
 
   const handleDeleteText = () => {
@@ -648,7 +658,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
           <main 
             ref={imageContainerRef} 
             className="flex-1 relative w-full bg-black/90 overflow-hidden" 
-            onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); handlePopoverOpenChange(false);}}
+            onClick={() => {setActiveTextId(null); setActiveEmojiId(null); handlePopoverOpenChange(false);}}
           >
               <Image 
                 src={imagePreview} 
@@ -667,7 +677,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
                   emoji={emoji}
                   isActive={emoji.id === activeEmojiId}
                   onDragStop={(_, data) => handleEmojiDragStop(emoji.id, data)}
-                  onDoubleClick={(e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     setActiveTextId(null);
                     setActiveEmojiId(emoji.id);
@@ -684,7 +694,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
                   isActive={text.id === activeTextId}
                   onTextUpdate={(e) => handleTextUpdate(text.id, e.target.value)}
                   onDragStop={(_, data) => handleDragStop(text.id, data)}
-                  onDoubleClick={(e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     setActiveEmojiId(null);
                     setActiveTextId(text.id);
@@ -774,6 +784,18 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
                           ))}
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="font-size">Size</Label>
+                        <Slider
+                            id="font-size"
+                            value={[activeText.fontSize]}
+                            min={12}
+                            max={128}
+                            step={1}
+                            onValueChange={handleFontSizeChange}
+                            onValueCommit={() => recordHistory({ filters, texts, emojis })}
+                        />
+                       </div>
                       <Button onClick={() => setIsEditPopoverOpen(false)}>Done</Button>
                     </div>
                   ) : editPanel === 'emoji' && activeEmoji ? (
