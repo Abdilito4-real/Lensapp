@@ -93,6 +93,56 @@ function Quiz({ quiz }: { quiz: NonNullable<SnapNotesOutput['quiz']> }) {
     );
 }
 
+const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<File> => {
+    return new Promise((resolve, reject) => {
+        const img = document.createElement('img');
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.src = e.target?.result as string;
+        };
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    return reject(new Error('Canvas is empty'));
+                }
+                const newFile = new File([blob], file.name, {
+                    type: file.type,
+                    lastModified: Date.now()
+                });
+                resolve(newFile);
+            }, file.type, 0.9); // 0.9 quality
+        };
+
+        img.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
 
 export default function SnapNotesPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -104,15 +154,21 @@ export default function SnapNotesPage() {
   const [state, formAction] = useActionState(generateStudyTools, { result: undefined, error: undefined });
   const { toast } = useToast();
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setImageFile(file);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const resizedFile = await resizeImage(file, 1024, 1024);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+          setImageFile(resizedFile);
+        };
+        reader.readAsDataURL(resizedFile);
+      } catch(error) {
+        console.error("Image resize failed:", error);
+        toast({ title: 'Image Error', description: 'Could not process the selected image.', variant: 'destructive' });
+      }
     }
   };
 
@@ -143,12 +199,21 @@ export default function SnapNotesPage() {
       const context = canvas.getContext('2d');
       if (context) {
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        canvas.toBlob(blob => {
+        canvas.toBlob(async (blob) => {
           if (blob) {
             const file = new File([blob], "snapnote.jpg", { type: "image/jpeg" });
-            setImagePreview(dataUrl);
-            setImageFile(file);
+            try {
+                const resizedFile = await resizeImage(file, 1024, 1024);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImagePreview(reader.result as string);
+                    setImageFile(resizedFile);
+                };
+                reader.readAsDataURL(resizedFile);
+            } catch (err) {
+                console.error("Failed to resize image", err);
+                toast({ title: 'Image Error', description: 'Could not process the captured image.', variant: 'destructive' });
+            }
           }
         }, 'image/jpeg');
       }
@@ -172,9 +237,12 @@ export default function SnapNotesPage() {
           </CardContent>
           <CardFooter className="p-4 flex-col items-stretch gap-4">
               <Button variant="outline" onClick={reset}>Choose a different image</Button>
-              <form action={formAction} className="space-y-4">
-                  <input type="hidden" name="photo" value={imageFile ? 'true' : ''} />
-                  {imageFile && <input type="hidden" name="photo" value={imageFile as any} />}
+              <form action={(formData) => {
+                  if (imageFile) {
+                    formData.append('photo', imageFile);
+                  }
+                  formAction(formData);
+              }} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <SubmitButton action="summarize" />
                       <SubmitButton action="flashcards" />
