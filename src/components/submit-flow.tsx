@@ -173,6 +173,57 @@ const DraggableEmoji = ({
   );
 };
 
+const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<File> => {
+    return new Promise((resolve, reject) => {
+        const img = document.createElement('img');
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.src = e.target?.result as string;
+        };
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    return reject(new Error('Canvas is empty'));
+                }
+                const newFile = new File([blob], file.name, {
+                    type: file.type,
+                    lastModified: Date.now()
+                });
+                resolve(newFile);
+            }, file.type, 0.9); // 0.9 quality
+        };
+
+        img.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
+
 export function SubmitFlow({ challengeTopic, challengeDescription }: { challengeTopic: string; challengeDescription: string; }) {
   const [stage, setStage] = useState<Stage>('select');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -257,14 +308,20 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
     setEmojis(initialState.emojis);
   }
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        enterPreviewStage(reader.result as string, file);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const resizedFile = await resizeImage(file, 1920, 1080);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          enterPreviewStage(reader.result as string, resizedFile);
+        };
+        reader.readAsDataURL(resizedFile);
+      } catch (error) {
+        console.error("Image resize failed:", error);
+        toast({ title: 'Image Error', description: `Could not process the selected image.`, variant: 'destructive' });
+      }
     }
   };
 
@@ -311,11 +368,22 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
         } else {
             context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         }
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        canvas.toBlob(blob => {
+        canvas.toBlob(async (blob) => {
           if (blob) {
             const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-            enterPreviewStage(dataUrl, file);
+            try {
+                const resizedFile = await resizeImage(file, 1920, 1080);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    if (isMountedRef.current && reader.result) {
+                        enterPreviewStage(reader.result as string, resizedFile);
+                    }
+                };
+                reader.readAsDataURL(resizedFile);
+            } catch (err) {
+                console.error("Failed to resize image", err);
+                toast({ title: 'Image Error', description: 'Could not process the captured image.', variant: 'destructive' });
+            }
           }
         }, 'image/jpeg');
         stopCamera();
