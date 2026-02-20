@@ -42,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 type Stage = 'select' | 'preview';
 
@@ -93,11 +94,13 @@ const DraggableText = ({
   onTextUpdate,
   onDragStop,
   onDoubleClick,
+  isActive,
 }: {
   text: TextElement;
   onTextUpdate: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onDragStop: (e: any, data: { x: number; y: number }) => void;
   onDoubleClick: (e: React.MouseEvent) => void;
+  isActive: boolean;
 }) => {
   const nodeRef = useRef(null);
   return (
@@ -109,7 +112,10 @@ const DraggableText = ({
     >
       <div
         ref={nodeRef}
-        className="absolute cursor-move p-2"
+        className={cn(
+          "absolute cursor-move p-2 rounded-lg",
+          isActive && "ring-2 ring-primary ring-offset-2 ring-offset-black/50"
+        )}
         onDoubleClick={onDoubleClick}
       >
         <Textarea
@@ -132,10 +138,12 @@ const DraggableEmoji = ({
   emoji,
   onDragStop,
   onDoubleClick,
+  isActive,
 }: {
   emoji: EmojiElement;
   onDragStop: (e: any, data: { x: number; y: number }) => void;
   onDoubleClick: (e: React.MouseEvent) => void;
+  isActive: boolean;
 }) => {
   const nodeRef = useRef(null);
   return (
@@ -147,7 +155,10 @@ const DraggableEmoji = ({
     >
       <div
         ref={nodeRef}
-        className="absolute cursor-move p-2"
+        className={cn(
+            "absolute cursor-move p-2 rounded-full",
+            isActive && "ring-2 ring-primary ring-offset-2 ring-offset-black/50"
+        )}
         style={{
           fontSize: `${emoji.size}px`,
           textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
@@ -596,6 +607,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
+      stopCamera();
     };
   }, [imagePreview]);
 
@@ -609,38 +621,114 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
         <AlertDialog open={isDiscardWarningOpen} onOpenChange={setIsDiscardWarningOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Discard Changes?</AlertDialogTitle>
+              <AlertDialogTitle>Discard Edits?</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to discard your edits? This action cannot be undone.
+                If you go back, all your edits will be lost. Are you sure you want to discard your changes?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-              <AlertDialogAction onClick={resetFlow} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Discard</AlertDialogAction>
+              <AlertDialogAction onClick={resetFlow} variant="destructive">Discard</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       
-        <div className="w-full max-w-md mx-auto flex flex-col h-full" style={{minHeight: 'calc(100vh - 10rem)'}}>
-          <header className="flex items-center justify-between py-2 flex-shrink-0">
+        <div className="w-full max-w-lg mx-auto flex flex-col bg-background" style={{height: 'calc(100vh - 8rem)'}}>
+          <header className="flex items-center justify-between p-2 border-b flex-shrink-0">
               <Button variant="ghost" size="icon" onClick={() => setIsDiscardWarningOpen(true)}>
                   <ArrowLeft className="h-5 w-5" />
+                  <span className="sr-only">Go back</span>
               </Button>
-              <h1 className="text-lg font-semibold">Edit</h1>
-              <div className="w-10"></div> {/* Spacer */}
+              <h1 className="text-lg font-semibold">Edit & Submit</h1>
+              <Button onClick={handleFinalSubmission} size="sm">
+                  Submit
+              </Button>
           </header>
 
-          <div className="flex items-center justify-center gap-1 sm:gap-2 p-2 overflow-x-auto border-y my-2 flex-shrink-0">
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleResetAllEdits}><RefreshCcw className="h-5 w-5" /></Button>
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => setIsCropping(true)}><Crop className="h-5 w-5" /></Button>
+          <main 
+            ref={imageContainerRef} 
+            className="flex-1 relative w-full bg-black/90 overflow-hidden" 
+            onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); handlePopoverOpenChange(false);}}
+          >
+              <Image 
+                src={imagePreview} 
+                alt="Submission preview" 
+                fill 
+                className="object-contain" 
+                sizes="(max-width: 512px) 100vw, 512px" 
+                style={{
+                  filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%) grayscale(${filters.grayscale}%) sepia(${filters.sepia}%) invert(${filters.invert}%) hue-rotate(${filters.hueRotate}deg) blur(${filters.blur}px)`
+                }}
+              />
+              
+              {emojis.map((emoji) => (
+                <DraggableEmoji
+                  key={emoji.id}
+                  emoji={emoji}
+                  isActive={emoji.id === activeEmojiId}
+                  onDragStop={(_, data) => handleEmojiDragStop(emoji.id, data)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTextId(null);
+                    setActiveEmojiId(emoji.id);
+                    setEditPanel('emoji');
+                    setIsEditPopoverOpen(true);
+                  }}
+                />
+              ))}
+
+              {texts.map((text) => (
+                <DraggableText
+                  key={text.id}
+                  text={text}
+                  isActive={text.id === activeTextId}
+                  onTextUpdate={(e) => handleTextUpdate(text.id, e.target.value)}
+                  onDragStop={(_, data) => handleDragStop(text.id, data)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setActiveEmojiId(null);
+                    setActiveTextId(text.id);
+                    setEditPanel('text');
+                    setIsEditPopoverOpen(true);
+                  }}
+                />
+              ))}
+
+              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
+                <div className="relative">
+                    <Textarea 
+                      placeholder="Add a creative caption..."
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      className="bg-black/30 border-none text-white placeholder:text-gray-300 focus-visible:ring-1 focus-visible:ring-primary/50 text-left resize-none pr-10"
+                      rows={2}
+                    />
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute right-1 top-1 h-8 w-8 text-white hover:bg-white/20 hover:text-white"
+                        onClick={handleSuggestCaption}
+                        disabled={isCaptionLoading}
+                        aria-label="Suggest Caption"
+                    >
+                        {isCaptionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                    </Button>
+                </div>
+              </div>
+          </main>
+          
+          <footer className="flex-shrink-0 border-t bg-background">
+            <div className="flex items-center justify-around p-1 overflow-x-auto">
+              <Button variant="ghost" className="flex-col h-auto p-2 gap-1" onClick={handleResetAllEdits}><RefreshCcw className="h-5 w-5" /><span className="text-xs">Reset</span></Button>
+              <Button variant="ghost" className="flex-col h-auto p-2 gap-1" onClick={() => setIsCropping(true)}><Crop className="h-5 w-5" /><span className="text-xs">Crop</span></Button>
               
               <Popover open={isEditPopoverOpen} onOpenChange={handlePopoverOpenChange}>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-auto p-2" onClick={() => { setEditPanel('filters'); setActiveTextId(null); setActiveEmojiId(null); setIsEditPopoverOpen(true)}}>
-                        <SlidersHorizontal className="h-5 w-5" />
+                    <Button variant="ghost" className="flex-col h-auto p-2 gap-1" onClick={() => { setEditPanel('filters'); setActiveTextId(null); setActiveEmojiId(null); setIsEditPopoverOpen(true)}}>
+                        <SlidersHorizontal className="h-5 w-5" /><span className="text-xs">Filters</span>
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80">
+                <PopoverContent className="w-80" side="top" align="center">
                   {editPanel === 'text' && activeText ? (
                     <div className="grid gap-4">
                       <div className="flex items-center justify-between">
@@ -686,7 +774,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
                           ))}
                         </div>
                       </div>
-                      <Button onClick={() => setIsEditPopoverOpen(false)}>OK</Button>
+                      <Button onClick={() => setIsEditPopoverOpen(false)}>Done</Button>
                     </div>
                   ) : editPanel === 'emoji' && activeEmoji ? (
                     <div className="grid gap-4">
@@ -708,126 +796,51 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
                                 onValueCommit={() => recordHistory({ filters, texts, emojis })}
                             />
                         </div>
-                        <Button onClick={() => setIsEditPopoverOpen(false)}>OK</Button>
+                        <Button onClick={() => setIsEditPopoverOpen(false)}>Done</Button>
                     </div>
                   ) : (
                     <div className="grid gap-4">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <h4 className="font-medium leading-none">Edit Filters</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Adjust your photo's look.
-                                </p>
+                                <h4 className="font-medium leading-none">Filters</h4>
+                                <p className="text-sm text-muted-foreground">Adjust your photo's look.</p>
                             </div>
                             <Button variant="ghost" size="icon" onClick={handleResetFilters} className="h-8 w-8 flex-shrink-0">
-                                <RotateCcw className="h-4 w-4" />
-                                <span className="sr-only">Reset filters</span>
+                                <RotateCcw className="h-4 w-4" /><span className="sr-only">Reset filters</span>
                             </Button>
                         </div>
-                        <div className="grid gap-2">
-                             <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="brightness" className="col-span-2">Brightness</Label>
-                                <Slider
-                                    id="brightness"
-                                    value={[filters.brightness]}
-                                    max={200}
-                                    step={1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, brightness: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, brightness: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.brightness}%</span>
+                        <div className="grid gap-2 text-xs">
+                            <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="brightness" className="col-span-1">Bright</Label>
+                                <Slider id="brightness" value={[filters.brightness]} max={200} step={1} onValueChange={(v) => setFilters(f => ({ ...f, brightness: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, brightness: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
-                            <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="contrast" className="col-span-2">Contrast</Label>
-                                <Slider
-                                    id="contrast"
-                                    value={[filters.contrast]}
-                                    max={200}
-                                    step={1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, contrast: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, contrast: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.contrast}%</span>
+                            <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="contrast" className="col-span-1">Contrast</Label>
+                                <Slider id="contrast" value={[filters.contrast]} max={200} step={1} onValueChange={(v) => setFilters(f => ({ ...f, contrast: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, contrast: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
-                            <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="saturate" className="col-span-2">Saturation</Label>
-                                <Slider
-                                    id="saturate"
-                                    value={[filters.saturate]}
-                                    max={200}
-                                    step={1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, saturate: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, saturate: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.saturate}%</span>
+                            <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="saturate" className="col-span-1">Saturate</Label>
+                                <Slider id="saturate" value={[filters.saturate]} max={200} step={1} onValueChange={(v) => setFilters(f => ({ ...f, saturate: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, saturate: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
-                            <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="grayscale" className="col-span-2">Grayscale</Label>
-                                <Slider
-                                    id="grayscale"
-                                    value={[filters.grayscale]}
-                                    max={100}
-                                    step={1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, grayscale: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, grayscale: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.grayscale}%</span>
+                            <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="grayscale" className="col-span-1">Grayscale</Label>
+                                <Slider id="grayscale" value={[filters.grayscale]} max={100} step={1} onValueChange={(v) => setFilters(f => ({ ...f, grayscale: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, grayscale: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
-                             <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="sepia" className="col-span-2">Sepia</Label>
-                                <Slider
-                                    id="sepia"
-                                    value={[filters.sepia]}
-                                    max={100}
-                                    step={1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, sepia: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, sepia: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.sepia}%</span>
+                             <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="sepia" className="col-span-1">Sepia</Label>
+                                <Slider id="sepia" value={[filters.sepia]} max={100} step={1} onValueChange={(v) => setFilters(f => ({ ...f, sepia: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, sepia: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
-                             <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="invert" className="col-span-2">Invert</Label>
-                                <Slider
-                                    id="invert"
-                                    value={[filters.invert]}
-                                    max={100}
-                                    step={1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, invert: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, invert: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.invert}%</span>
+                             <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="invert" className="col-span-1">Invert</Label>
+                                <Slider id="invert" value={[filters.invert]} max={100} step={1} onValueChange={(v) => setFilters(f => ({ ...f, invert: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, invert: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
-                             <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="hueRotate" className="col-span-2">Hue</Label>
-                                <Slider
-                                    id="hueRotate"
-                                    value={[filters.hueRotate]}
-                                    max={360}
-                                    step={1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, hueRotate: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, hueRotate: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.hueRotate}°</span>
+                             <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="hueRotate" className="col-span-1">Hue</Label>
+                                <Slider id="hueRotate" value={[filters.hueRotate]} max={360} step={1} onValueChange={(v) => setFilters(f => ({ ...f, hueRotate: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, hueRotate: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
-                             <div className="grid grid-cols-6 items-center gap-4">
-                                <Label htmlFor="blur" className="col-span-2">Blur</Label>
-                                <Slider
-                                    id="blur"
-                                    value={[filters.blur]}
-                                    max={10}
-                                    step={0.1}
-                                    onValueChange={(value) => setFilters(f => ({ ...f, blur: value[0] }))}
-                                    onValueCommit={(value) => recordHistory({ filters: { ...filters, blur: value[0] }, texts, emojis })}
-                                    className="col-span-3"
-                                />
-                                <span className="text-sm text-muted-foreground font-mono justify-self-end">{filters.blur.toFixed(1)}px</span>
+                             <div className="grid grid-cols-5 items-center gap-2">
+                                <Label htmlFor="blur" className="col-span-1">Blur</Label>
+                                <Slider id="blur" value={[filters.blur]} max={10} step={0.1} onValueChange={(v) => setFilters(f => ({ ...f, blur: v[0] }))} onValueCommit={(v) => recordHistory({ filters: { ...filters, blur: v[0] }, texts, emojis })} className="col-span-4" />
                             </div>
                         </div>
                     </div>
@@ -835,102 +848,31 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
                 </PopoverContent>
               </Popover>
               
-              <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleAddText}><Type className="h-5 w-5" /></Button>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-auto p-2">
-                    <Smile className="h-5 w-5" />
+                  <Button variant="ghost" className="flex-col h-auto p-2 gap-1">
+                    <Smile className="h-5 w-5" /><span className="text-xs">Emoji</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 max-h-60 overflow-y-auto p-2">
+                <PopoverContent className="w-80 max-h-60 overflow-y-auto p-2" side="top" align="center">
                   <div className="grid grid-cols-8 gap-1">
                     {emojiList.map(emoji => (
-                      <button
-                        key={emoji}
-                        onClick={() => handleAddEmoji(emoji)}
-                        className="text-xl rounded-md p-1 hover:bg-muted transition-colors"
-                      >
+                      <button key={emoji} onClick={() => handleAddEmoji(emoji)} className="text-xl rounded-md p-1 hover:bg-muted transition-colors">
                         {emoji}
                       </button>
                     ))}
                   </div>
                 </PopoverContent>
               </Popover>
+
+              <Button variant="ghost" className="flex-col h-auto p-2 gap-1" onClick={handleAddText}><Type className="h-5 w-5" /><span className="text-xs">Text</span></Button>
+
+              <div className="h-6 border-l mx-2"></div>
+
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleUndo} disabled={historyIndex <= 0}><Undo className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="h-auto p-2" onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="h-5 w-5" /></Button>
-          </div>
-
-          <div ref={imageContainerRef} className="relative flex-1 w-full rounded-lg overflow-hidden bg-black mb-4" onDoubleClick={() => {setActiveTextId(null); setActiveEmojiId(null); handlePopoverOpenChange(false);}}>
-              <Image 
-                src={imagePreview} 
-                alt="Submission preview" 
-                fill 
-                className="object-contain" 
-                sizes="(max-width: 448px) 100vw, 448px" 
-                style={{
-                  filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%) grayscale(${filters.grayscale}%) sepia(${filters.sepia}%) invert(${filters.invert}%) hue-rotate(${filters.hueRotate}deg) blur(${filters.blur}px)`
-                }}
-              />
-              
-              {emojis.map((emoji) => (
-                <DraggableEmoji
-                  key={emoji.id}
-                  emoji={emoji}
-                  onDragStop={(_, data) => handleEmojiDragStop(emoji.id, data)}
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    setActiveTextId(null);
-                    setActiveEmojiId(emoji.id);
-                    setEditPanel('emoji');
-                    setIsEditPopoverOpen(true);
-                  }}
-                />
-              ))}
-
-              {texts.map((text) => (
-                <DraggableText
-                  key={text.id}
-                  text={text}
-                  onTextUpdate={(e) => handleTextUpdate(text.id, e.target.value)}
-                  onDragStop={(_, data) => handleDragStop(text.id, data)}
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    setActiveEmojiId(null);
-                    setActiveTextId(text.id);
-                    setEditPanel('text');
-                    setIsEditPopoverOpen(true);
-                  }}
-                />
-              ))}
-
-              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
-                <div className="relative">
-                    <Textarea 
-                      placeholder="Add caption..."
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      className="bg-black/50 border-none text-white placeholder:text-gray-300 focus-visible:ring-0 text-center resize-none pr-10"
-                      rows={1}
-                    />
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                        onClick={handleSuggestCaption}
-                        disabled={isCaptionLoading}
-                        aria-label="Suggest Caption"
-                    >
-                        {isCaptionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-                    </Button>
-                </div>
-              </div>
-          </div>
-          
-          <div className="flex-shrink-0">
-              <Button onClick={handleFinalSubmission} className="w-full">
-                  Submit
-              </Button>
-          </div>
+            </div>
+          </footer>
         </div>
         
         {isCropping && imagePreview && (
@@ -985,14 +927,14 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
               </div>
             ) : (
               <>
-                <Button className="w-full" asChild>
+                <Button className="w-full h-12 text-base" asChild>
                   <label htmlFor="file-upload" className="cursor-pointer">
-                    <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                    <Upload className="mr-2 h-5 w-5" /> Upload Photo
                     <input id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                   </label>
                 </Button>
-                <Button variant="outline" className="w-full" onClick={() => startCamera(facingMode)}>
-                  <Camera className="mr-2 h-4 w-4" /> Use Camera
+                <Button variant="outline" className="w-full h-12 text-base" onClick={() => startCamera(facingMode)}>
+                  <Camera className="mr-2 h-5 w-5" /> Use Camera
                 </Button>
               </>
             )}
