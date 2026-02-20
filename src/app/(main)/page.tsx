@@ -1,87 +1,197 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Countdown } from "@/components/countdown";
-import { currentChallenge } from "@/lib/data";
-import Link from 'next/link';
-import { ArrowRight } from "lucide-react";
+'use client';
+
+import { useState } from 'react';
+import { useAuth } from '@/context/auth-context';
 import Image from 'next/image';
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { users, findUserById } from '@/lib/data';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Search, UserPlus, Send, Check, X, LogIn, Users } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function HomePage() {
-  const galleryImages = [
-    'gallery-1',
-    'gallery-2',
-    'gallery-3',
-    'gallery-4',
-  ]
-  .map(id => PlaceHolderImages.find(p => p.id === id))
-  .filter((p): p is NonNullable<typeof p> => p !== undefined);
+    const { user, isAuthenticated } = useAuth();
+    const { toast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
 
-  return (
-    <div className="flex flex-col items-center justify-center text-center space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-          Today's Challenge
-        </h1>
-        <p className="max-w-[700px] text-muted-foreground md:text-xl">
-          A new photo challenge every day. Submit your best shot.
-        </p>
-      </div>
+    if (!isAuthenticated || !user) {
+        return (
+            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
+                 <LogIn className="w-16 h-16 text-muted-foreground" />
+                 <h2 className="text-2xl font-bold">Please Log In</h2>
+                 <p className="text-muted-foreground">Log in to find friends and manage your connections.</p>
+            </div>
+        )
+    }
 
-      <div className="relative w-full max-w-5xl flex justify-center items-center py-6 md:py-10">
-        
-        {/* Left Images */}
-        {galleryImages[0] && (
-            <div className="hidden md:block absolute left-0 top-1/2 -translate-y-3/4 w-48 h-64 lg:w-52 lg:h-72 transform -rotate-12 hover:-rotate-6 hover:scale-105 transition-transform duration-300 z-0">
-                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
-                    <Image src={galleryImages[0].imageUrl} alt={galleryImages[0].description} fill className="object-cover transform scale-x-[-1]" data-ai-hint={galleryImages[0].imageHint} sizes="(min-width: 1024px) 208px, 192px" />
-                </Card>
-            </div>
-        )}
-        {galleryImages[1] && (
-            <div className="hidden md:block absolute left-24 top-1/2 -translate-y-1/4 w-40 h-52 lg:w-44 lg:h-60 transform rotate-6 hover:rotate-2 hover:scale-105 transition-transform duration-300 z-20">
-                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
-                    <Image src={galleryImages[1].imageUrl} alt={galleryImages[1].description} fill className="object-cover" data-ai-hint={galleryImages[1].imageHint} sizes="(min-width: 1024px) 176px, 160px" />
-                </Card>
-            </div>
-        )}
-
-        <Card className="w-full max-w-md text-left shadow-lg z-10 mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-headline">{currentChallenge.topic}</CardTitle>
-            <CardDescription>{currentChallenge.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center space-y-4">
-              <p className="text-sm font-medium text-muted-foreground">Challenge ends in:</p>
-              <Countdown targetDate={currentChallenge.date} />
-          </CardContent>
-          <CardFooter>
-              <Button asChild className="w-full">
-                  <Link href="/submit">
-                      Submit Your Photo
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-              </Button>
-          </CardFooter>
-        </Card>
-
-        {/* Right Images */}
-        {galleryImages[2] && (
-            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-3/4 w-48 h-64 lg:w-52 lg:h-72 transform rotate-12 hover:rotate-6 hover:scale-105 transition-transform duration-300 z-0">
-                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
-                    <Image src={galleryImages[2].imageUrl} alt={galleryImages[2].description} fill className="object-cover" data-ai-hint={galleryImages[2].imageHint} sizes="(min-width: 1024px) 208px, 192px" />
-                </Card>
-            </div>
-        )}
-        {galleryImages[3] && (
-            <div className="hidden md:block absolute right-24 top-1/2 -translate-y-1/4 w-40 h-52 lg:w-44 lg:h-60 transform -rotate-6 hover:-rotate-2 hover:scale-105 transition-transform duration-300 z-20">
-                <Card className="h-full w-full overflow-hidden shadow-2xl relative">
-                    <Image src={galleryImages[3].imageUrl} alt={galleryImages[3].description} fill className="object-cover transform scale-x-[-1]" data-ai-hint={galleryImages[3].imageHint} sizes="(min-width: 1024px) 176px, 160px" />
-                </Card>
-            </div>
-        )}
-      </div>
-    </div>
-  );
-}
+    // Mock data filtering
+    const currentUser = findUserById(user.id);
+    const friendRequests = currentUser?.friendRequests.map(findUserById).filter(Boolean) || [];
+    const friends = currentUser?.friends.map(findUserById).filter(Boolean) || [];
     
+    const allUserIds = new Set([user.id, ...currentUser?.friends || [], ...currentUser?.friendRequests || []]);
+    const newUsers = users.filter(u => !allUserIds.has(u.id)).slice(0, 5);
+    
+    const searchResults = users.filter(u => 
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        searchTerm &&
+        u.id !== user.id
+    );
+
+    const handleSendStreak = (friendName: string) => {
+        toast({
+            title: `Streak Sent!`,
+            description: `You've sent a streak reminder to ${friendName}.`,
+        });
+    };
+
+    const handleAddFriend = (newFriendName: string) => {
+         toast({
+            title: `Friend Request Sent!`,
+            description: `Your friend request to ${newFriendName} has been sent.`,
+        });
+    }
+
+    const handleRequest = (requestorName: string, accept: boolean) => {
+        toast({
+            title: `Request ${accept ? 'Accepted' : 'Declined'}`,
+            description: `You have ${accept ? 'accepted' : 'declined'} the friend request from ${requestorName}.`,
+        });
+    }
+
+    return (
+        <div className="space-y-8">
+            <div className="text-center">
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">Community</h1>
+                <p className="max-w-md mx-auto text-muted-foreground md:text-lg">
+                    Find new friends, manage requests, and connect with other photographers.
+                </p>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Find Friends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex w-full items-center space-x-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Search by name..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="flex-1"
+                        />
+                        <Button type="submit" size="icon">
+                            <Search className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    {searchTerm && (
+                        <div className="mt-4 space-y-2">
+                            {searchResults.length > 0 ? searchResults.map(foundUser => {
+                                const avatar = PlaceHolderImages.find(p => p.id === foundUser.avatarId);
+                                return (
+                                    <div key={foundUser.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                                        <div className="flex items-center gap-4">
+                                            <Avatar>
+                                                <AvatarImage src={avatar?.imageUrl} alt={foundUser.name} />
+                                                <AvatarFallback>{foundUser.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-medium">{foundUser.name}</span>
+                                        </div>
+                                        <Button size="sm" variant="outline" onClick={() => handleAddFriend(foundUser.name)}>
+                                            <UserPlus className="mr-2 h-4 w-4" /> Add
+                                        </Button>
+                                    </div>
+                                )
+                            }) : <p className="text-sm text-muted-foreground text-center pt-2">No users found.</p>}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {friendRequests.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Friend Requests</CardTitle>
+                        <CardDescription>You have {friendRequests.length} new friend request{friendRequests.length > 1 ? 's' : ''}.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {friendRequests.map(requestor => {
+                            const avatar = PlaceHolderImages.find(p => p.id === requestor.avatarId);
+                            return (
+                                <div key={requestor.id} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar>
+                                            <AvatarImage src={avatar?.imageUrl} alt={requestor.name} />
+                                            <AvatarFallback>{requestor.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-medium">{requestor.name} wants to be your friend.</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button size="icon" variant="outline" onClick={() => handleRequest(requestor.name, false)}><X className="h-4 w-4"/></Button>
+                                        <Button size="icon" onClick={() => handleRequest(requestor.name, true)}><Check className="h-4 w-4"/></Button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </CardContent>
+                </Card>
+            )}
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>My Friends</CardTitle>
+                    <CardDescription>Send streaks to your friends to keep them motivated.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {friends.length > 0 ? friends.map(friend => {
+                        const avatar = PlaceHolderImages.find(p => p.id === friend.avatarId);
+                        return (
+                            <div key={friend.id} className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <Avatar>
+                                        <AvatarImage src={avatar?.imageUrl} alt={friend.name} />
+                                        <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-medium">{friend.name}</span>
+                                </div>
+                                <Button size="sm" variant="outline" onClick={() => handleSendStreak(friend.name)}>
+                                    <Send className="mr-2 h-4 w-4" /> Send Streak
+                                </Button>
+                            </div>
+                        )
+                    }) : <p className="text-sm text-muted-foreground text-center py-4">You haven't added any friends yet.</p>}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Discover New People</CardTitle>
+                    <CardDescription>Connect with other users on Lens.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     {newUsers.map(newUser => {
+                        const avatar = PlaceHolderImages.find(p => p.id === newUser.avatarId);
+                        return (
+                            <div key={newUser.id} className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <Avatar>
+                                        <AvatarImage src={avatar?.imageUrl} alt={newUser.name} />
+                                        <AvatarFallback>{newUser.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-medium">{newUser.name}</span>
+                                </div>
+                                <Button size="sm" onClick={() => handleAddFriend(newUser.name)}>
+                                    <UserPlus className="mr-2 h-4 w-4" /> Add Friend
+                                </Button>
+                            </div>
+                        )
+                    })}
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

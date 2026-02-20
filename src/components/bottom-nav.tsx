@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Trophy, PlusSquare, BookOpen, User } from 'lucide-react';
+import { Trophy, BookOpen, User, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: Home },
+  { href: '/', label: 'Home', icon: Users },
   { href: '/snap-notes', label: 'Study', icon: BookOpen },
-  { href: '/submit', label: 'Submit', icon: PlusSquare, className: "text-primary-foreground bg-primary rounded-lg p-3 h-auto w-auto shadow-lg hover:bg-primary/90" },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];
@@ -32,12 +31,11 @@ export function BottomNav() {
               href={item.href}
               className={cn(
                 'flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-colors',
-                isActive && 'text-primary',
-                item.className
+                isActive && 'text-primary'
               )}
             >
-              <item.icon className={cn('h-6 w-6', item.href === '/submit' ? 'h-7 w-7' : '')} />
-              <span className={cn('text-xs mt-1', item.href === '/submit' ? 'hidden' : '')}>{item.label}</span>
+              <item.icon className="h-6 w-6" />
+              <span className="text-xs mt-1">{item.label}</span>
             </Link>
           );
         })}

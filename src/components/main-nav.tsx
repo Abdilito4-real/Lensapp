@@ -7,7 +7,6 @@ import { useAuth } from '@/context/auth-context';
 
 const navItems = [
   { href: '/', label: 'Home' },
-  { href: '/friends', label: 'Friends' },
   { href: '/leaderboard', label: 'Leaderboard' },
 ];
 
@@ -19,7 +18,6 @@ export function MainNav() {
     <nav className="hidden md:flex items-center gap-6 text-sm">
       {navItems.map((item) => {
         const isActive = (item.href === '/' && pathname === '/') || (item.href !== '/' && pathname.startsWith(item.href));
-        if (item.href === '/friends' && !isAuthenticated) return null;
         return (
           <Link
             key={item.href}
