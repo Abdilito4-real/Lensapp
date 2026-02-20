@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent, useActionState } from 'react';
+import { useState, useRef, type ChangeEvent, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -155,6 +155,12 @@ export default function SnapNotesPage() {
   const [state, formAction] = useActionState(generateStudyTools, { result: undefined, error: undefined });
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (videoStream && videoRef.current) {
+      videoRef.current.srcObject = videoStream;
+    }
+  }, [videoStream]);
+
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
@@ -178,9 +184,6 @@ export default function SnapNotesPage() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setVideoStream(stream);
     } catch (err) {
       console.error("Error accessing camera: ", err);
