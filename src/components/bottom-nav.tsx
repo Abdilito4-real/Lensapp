@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Trophy, BookOpen, User, Users } from 'lucide-react';
+import { Trophy, BookOpen, User, Users, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Users },
   { href: '/snap-notes', label: 'Study', icon: BookOpen },
+  { href: '/submit', label: 'Submit', icon: Camera },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];

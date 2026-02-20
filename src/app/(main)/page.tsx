@@ -112,14 +112,18 @@ export default function HomePage() {
                 </CardContent>
             </Card>
 
-            {friendRequests.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>Friend Requests</CardTitle>
-                        <CardDescription>You have {friendRequests.length} new friend request{friendRequests.length > 1 ? 's' : ''}.</CardDescription>
+                        <CardDescription>
+                            {friendRequests.length > 0 
+                                ? `You have ${friendRequests.length} new friend request${friendRequests.length > 1 ? 's' : ''}.`
+                                : "You have no new friend requests."}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {friendRequests.map(requestor => {
+                        {friendRequests.length > 0 ? friendRequests.map(requestor => {
                             const avatar = PlaceHolderImages.find(p => p.id === requestor.avatarId);
                             return (
                                 <div key={requestor.id} className="flex items-center justify-between">
@@ -136,62 +140,62 @@ export default function HomePage() {
                                     </div>
                                 </div>
                             )
+                        }) : <p className="text-sm text-muted-foreground text-center py-4">No new requests.</p>}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>My Friends</CardTitle>
+                        <CardDescription>Send streaks to your friends to keep them motivated.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {friends.length > 0 ? friends.map(friend => {
+                            const avatar = PlaceHolderImages.find(p => p.id === friend.avatarId);
+                            return (
+                                <div key={friend.id} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar>
+                                            <AvatarImage src={avatar?.imageUrl} alt={friend.name} />
+                                            <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-medium">{friend.name}</span>
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => handleSendStreak(friend.name)}>
+                                        <Send className="mr-2 h-4 w-4" /> Send Streak
+                                    </Button>
+                                </div>
+                            )
+                        }) : <p className="text-sm text-muted-foreground text-center py-4">You haven't added any friends yet.</p>}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Discover New People</CardTitle>
+                        <CardDescription>Connect with other users on Lens.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {newUsers.map(newUser => {
+                            const avatar = PlaceHolderImages.find(p => p.id === newUser.avatarId);
+                            return (
+                                <div key={newUser.id} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar>
+                                            <AvatarImage src={avatar?.imageUrl} alt={newUser.name} />
+                                            <AvatarFallback>{newUser.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-medium">{newUser.name}</span>
+                                    </div>
+                                    <Button size="sm" onClick={() => handleAddFriend(newUser.name)}>
+                                        <UserPlus className="mr-2 h-4 w-4" /> Add Friend
+                                    </Button>
+                                </div>
+                            )
                         })}
                     </CardContent>
                 </Card>
-            )}
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>My Friends</CardTitle>
-                    <CardDescription>Send streaks to your friends to keep them motivated.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {friends.length > 0 ? friends.map(friend => {
-                        const avatar = PlaceHolderImages.find(p => p.id === friend.avatarId);
-                        return (
-                            <div key={friend.id} className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <Avatar>
-                                        <AvatarImage src={avatar?.imageUrl} alt={friend.name} />
-                                        <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium">{friend.name}</span>
-                                </div>
-                                <Button size="sm" variant="outline" onClick={() => handleSendStreak(friend.name)}>
-                                    <Send className="mr-2 h-4 w-4" /> Send Streak
-                                </Button>
-                            </div>
-                        )
-                    }) : <p className="text-sm text-muted-foreground text-center py-4">You haven't added any friends yet.</p>}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Discover New People</CardTitle>
-                    <CardDescription>Connect with other users on Lens.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     {newUsers.map(newUser => {
-                        const avatar = PlaceHolderImages.find(p => p.id === newUser.avatarId);
-                        return (
-                            <div key={newUser.id} className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <Avatar>
-                                        <AvatarImage src={avatar?.imageUrl} alt={newUser.name} />
-                                        <AvatarFallback>{newUser.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium">{newUser.name}</span>
-                                </div>
-                                <Button size="sm" onClick={() => handleAddFriend(newUser.name)}>
-                                    <UserPlus className="mr-2 h-4 w-4" /> Add Friend
-                                </Button>
-                            </div>
-                        )
-                    })}
-                </CardContent>
-            </Card>
+            </div>
         </div>
     );
 }
