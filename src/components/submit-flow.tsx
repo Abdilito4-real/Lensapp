@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, type ChangeEvent, useEffect, useCallback } from 'react';
@@ -33,6 +32,16 @@ import { ImageCropper } from './image-cropper';
 import Draggable from 'react-draggable';
 import { Input } from '@/components/ui/input';
 import { suggestCaption } from '@/lib/caption-actions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type Stage = 'select' | 'preview';
 
@@ -179,6 +188,8 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
 
   const [history, setHistory] = useState<EditorState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  
+  const [isDiscardWarningOpen, setIsDiscardWarningOpen] = useState(false);
 
   useEffect(() => {
     if (videoStream && videoRef.current) {
@@ -529,7 +540,7 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
     if (!activeEmojiId) return;
     const newEmojis = emojis.filter(e => e.id !== activeEmojiId);
     setEmojis(newEmojis);
-    recordHistory({ filters, texts: newEmojis, emojis: newEmojis });
+    recordHistory({ filters, texts, emojis: newEmojis });
 
     setActiveEmojiId(null);
     setIsEditPopoverOpen(false);
@@ -595,9 +606,24 @@ export function SubmitFlow({ challengeTopic }: { challengeTopic: string }) {
   if (stage === 'preview' && imagePreview) {
     return (
       <>
+        <AlertDialog open={isDiscardWarningOpen} onOpenChange={setIsDiscardWarningOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard Changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to discard your edits? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+              <AlertDialogAction onClick={resetFlow} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Discard</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      
         <div className="w-full max-w-md mx-auto flex flex-col h-full" style={{minHeight: 'calc(100vh - 10rem)'}}>
           <header className="flex items-center justify-between py-2 flex-shrink-0">
-              <Button variant="ghost" size="icon" onClick={resetFlow}>
+              <Button variant="ghost" size="icon" onClick={() => setIsDiscardWarningOpen(true)}>
                   <ArrowLeft className="h-5 w-5" />
               </Button>
               <h1 className="text-lg font-semibold">Edit</h1>
