@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle, X, Plus, SwitchCamera } from 'lucide-react';
+import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle, X, Plus, SwitchCamera, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateStudyTools } from '@/lib/studyactions';
 import type { SnapNotesOutput } from '@/ai/flows/snap-notes-flow';
@@ -55,6 +55,15 @@ function Quiz({ quiz }: { quiz: NonNullable<SnapNotesOutput['quiz']> }) {
         });
     };
 
+    const handleRetake = () => {
+        setSubmitted(false);
+        setSelectedAnswers({});
+        toast({
+            title: "Quiz Reset",
+            description: "You can now retake the quiz.",
+        });
+    };
+
     return (
         <div className="space-y-6">
             {quiz.map((item, index) => (
@@ -65,6 +74,7 @@ function Quiz({ quiz }: { quiz: NonNullable<SnapNotesOutput['quiz']> }) {
                     </CardHeader>
                     <CardContent>
                         <RadioGroup
+                            value={selectedAnswers[index] || ''}
                             onValueChange={(value) => setSelectedAnswers(prev => ({ ...prev, [index]: value }))}
                             disabled={submitted}
                         >
@@ -88,7 +98,14 @@ function Quiz({ quiz }: { quiz: NonNullable<SnapNotesOutput['quiz']> }) {
                     </CardContent>
                 </Card>
             ))}
-            <Button onClick={handleSubmit} disabled={submitted} className="w-full">Submit Quiz</Button>
+            {submitted ? (
+                <Button onClick={handleRetake} className="w-full">
+                    <RefreshCcw className="mr-2 h-4 w-4"/>
+                    Retake Quiz
+                </Button>
+            ) : (
+                <Button onClick={handleSubmit} className="w-full">Submit Quiz</Button>
+            )}
         </div>
     );
 }
