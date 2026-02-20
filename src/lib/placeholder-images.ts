@@ -75,25 +75,25 @@ export const PlaceHolderImages: ImagePlaceholder[] = [
   {
     "id": "submission-6",
     "description": "Photo submission of street food",
-    "imageUrl": "https://images.unsplash.com/photo-1619683815335-2b5b130a1baf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzdHJlZXQlMjBmb29kfGVufDB8fHx8MTc3MTQ1MDEyOHww&ixlib-rb-4.1.0&q=80&w=1080",
+    "imageUrl": "https://images.unsplash.com/photo-1619683815335-2b5b130a1baf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzdHJlZXQlMjBmb29kfGVufDB8fHx8MTc3MTQ1MDEyOHww&ixlib=rb-4.1.0&q=80&w=1080",
     "imageHint": "street food"
   },
   {
     "id": "win-1",
     "description": "Winning photo of a lone tree",
-    "imageUrl": "https://images.unsplash.com/photo-1604925307284-581d890e87a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxsb25lJTIwdHJlZXxlbnwwfHx8fDE3NzE0NTAxMjd8MA&ixlib-rb-4.1.0&q=80&w=1080",
+    "imageUrl": "https://images.unsplash.com/photo-1604925307284-581d890e87a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxsb25lJTIwdHJlZXxlbnwwfHx8fDE3NzE0NTAxMjd8MA&ixlib=rb-4.1.0&q=80&w=1080",
     "imageHint": "lone tree"
   },
   {
     "id": "win-2",
     "description": "Winning photo of a neon sign",
-    "imageUrl": "https://images.unsplash.com/photo-1603861609714-dda551f22d18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuZW9uJTIwc2lnbnxlbnwwfHx8fDE3NzE0MjA4MTR8MA&ixlib-rb-4.1.0&q=80&w=1080",
+    "imageUrl": "https://images.unsplash.com/photo-1603861609714-dda551f22d18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxuZW9uJTIwc2lnbnxlbnwwfHx8fDE3NzE0MjA4MTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
     "imageHint": "neon sign"
   },
   {
     "id": "win-3",
     "description": "Winning photo of a cat's eyes",
-    "imageUrl": "https://images.unsplash.com/photo-1574923842719-94d5f9e28793?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjYXQlMjBleWVzfGVufDB8fHx8MTc3MTQ1MDEyN3ww&ixlib-rb-4.1.0&q=80&w=1080",
+    "imageUrl": "https://images.unsplash.com/photo-1574923842719-94d5f9e28793?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjYXQlMjBleWVzfGVufDB8fHx8MTc3MTQ1MDEyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
     "imageHint": "cat eyes"
   },
   {
