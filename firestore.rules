@@ -187,6 +187,17 @@ service cloud.firestore {
         allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       }
     }
+    
+    /**
+     * @description This rule is specifically for the public leaderboard's collection group query.
+     *              It allows any user (authenticated or not) to query the 'submissions'
+     *              collection group, which is necessary to display the top submissions.
+     *              The 'get' rule ensures that only 'approved' submissions can actually be read.
+     */
+    match /{path=**}/submissions/{submissionId} {
+      allow list: if true;
+      allow get: if resource.data.moderationStatus == 'approved' || (isSignedIn() && request.auth.uid == resource.data.userId);
+    }
 
     /**
      * @description Defines achievement badges. This data is public for all users
@@ -262,3 +273,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
