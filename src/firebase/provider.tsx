@@ -86,8 +86,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             const userProfileRef = doc(firestore, 'userProfiles', firebaseUser.uid);
             getDoc(userProfileRef).then(userProfileSnap => {
               if (!userProfileSnap.exists()) {
+                const getDisplayName = () => {
+                    if (firebaseUser.displayName) {
+                        return firebaseUser.displayName;
+                    }
+                    if (firebaseUser.email) {
+                        return firebaseUser.email.split('@')[0];
+                    }
+                    return `User-${firebaseUser.uid.substring(0, 5)}`;
+                }
+
                 const newUserProfile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: FieldValue, updatedAt: FieldValue } = {
-                  displayName: `Anonymous ${firebaseUser.uid.substring(0, 5)}`,
+                  displayName: getDisplayName(),
                   profileImageUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
                   currentStreak: 0,
                   highestStreak: 0,
@@ -201,3 +211,5 @@ export const useUser = (): UserHookResult => { // Renamed from useAuthUser
   const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
   return { user, isUserLoading, userError };
 };
+
+    

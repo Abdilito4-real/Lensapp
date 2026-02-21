@@ -12,18 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState } from 'react';
-import { signInAnonymously, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
 import { LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import Link from 'next/link';
+import { EmailAuthDialog } from './email-auth-dialog';
 
 export function AuthButton() {
   const { user, isUserLoading } = useUser();
@@ -33,13 +30,6 @@ export function AuthButton() {
 
   const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `userProfiles/${user.uid}`) : null), [user, firestore]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
-
-  const handleLogin = () => {
-    signInAnonymously(auth).catch((error) => {
-        console.error("Anonymous sign-in failed", error);
-    });
-    setIsLoginDialogOpen(false);
-  };
   
   const handleLogout = () => {
     signOut(auth);
@@ -48,7 +38,6 @@ export function AuthButton() {
   if (isUserLoading || (user && isProfileLoading)) {
       return <Button variant="outline" size="sm">Loading...</Button>;
   }
-
 
   if (user && userProfile) {
     return (
@@ -66,7 +55,7 @@ export function AuthButton() {
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{userProfile.displayName}</p>
               <p className="text-xs leading-none text-muted-foreground">
-                @{userProfile.displayName.toLowerCase().replace(' ', '')}
+                {user.email || `@${userProfile.displayName.toLowerCase().replace(' ', '')}`}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -94,20 +83,10 @@ export function AuthButton() {
         Login
       </Button>
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Welcome to Lens</DialogTitle>
-            <DialogDescription>
-              Sign in anonymously to participate in daily challenges and vote for your favorite photos.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Button onClick={handleLogin} className="w-full" type="button">
-              Sign In Anonymously
-            </Button>
-          </div>
-        </DialogContent>
+        <EmailAuthDialog onOpenChange={setIsLoginDialogOpen} />
       </Dialog>
     </>
   );
 }
+
+    
