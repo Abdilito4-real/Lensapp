@@ -17,7 +17,10 @@ export async function generateAvatarAction(prompt: string): Promise<{ imageDataU
     return { imageDataUri: result.imageDataUri };
   } catch (e) {
     console.error(e);
-    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred during image generation.';
+    let errorMessage = e instanceof Error ? e.message : 'An unknown error occurred during image generation.';
+    if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('429') || errorMessage.includes('Quota exceeded')) {
+        errorMessage = 'You have exceeded the free quota for image generation. To continue, please check your Google Cloud plan and billing details.';
+    }
     return { error: errorMessage };
   }
 }
