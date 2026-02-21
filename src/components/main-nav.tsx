@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/auth-context';
+import { useUser } from '@/firebase';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -12,7 +12,8 @@ const navItems = [
 
 export function MainNav() {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
+  const isAuthenticated = !!user;
 
   return (
     <nav className="hidden md:flex items-center gap-6 text-sm">
