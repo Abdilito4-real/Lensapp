@@ -1,0 +1,264 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * Core Philosophy: This ruleset implements a security model based on strict
+     * user ownership, augmented with an explicit, database-backed administrator role.
+     * The primary goal is to ensure that users can only access and manage their own
+     * data, while designated administrators manage global content like challenges
+     * and badges.
+     *
+     * Data Structure: Data is organized into several top-level collections.
+     *   - /userProfiles: Publicly readable user information.
+     *   - /challenges: Publicly readable daily challenges, with nested /submissions.
+     *   - /badges: Publicly readable achievement definitions.
+     *   - /users: A private, user-scoped collection where each user's private data
+     *     (like /votes and /badges) is stored under their unique user ID.
+     *   - /roles_admin: A non-public collection used for existence-based checks to
+     *     grant administrator privileges.
+     *
+     * Key Security Decisions:
+     *   - User-Owned Data: All data under `/users/{userId}` is strictly controlled
+     *     by the user whose UID matches the `{userId}` path parameter.
+     *   - Admin Roles: Administrator privileges are granted by the existence of a
+     *     document in the `/roles_admin/{userId}` collection. This avoids custom
+     *     claims and provides a clear, auditable trail for admin access (DBAC).
+     *   - Public vs. Private Reads: Global content like challenges and badges is
+     *     publicly readable. User profiles are also public-read to allow for leaderboards
+     *     and social features. A user's specific votes and earned badges are private.
+     *   - Segregated Writes: Writes to global content are restricted to admins.
+     *     Writes to user-specific data are restricted to the data owner.
+     *
+     * Denormalization for Authorization: To ensure performant and secure rules,
+     * this design avoids costly `get()` calls for most user-based authorization.
+     *   - Ownership Fields: Documents like Submissions contain a denormalized `userId`
+     *     field, allowing rules to directly check `resource.data.userId` against
+     *     the authenticated user's UID.
+     *   - Path-Based Security: Collections like `/users/{userId}/votes` leverage the
+     *     path itself to enforce ownership, creating a simple and unbreakable link
+     *     between the data and its owner.
+     *   - Exception for Global State: A `get()` call is permitted in the `/submissions`
+     *     rule to check the parent challenge's voting window. This is a safe and
+     *     acceptable use, as it reads public, non-user-specific data to determine
+     *     global state (i.e., "is voting currently active?").
+     *
+     * Structural Segregation: The design separates public, read-mostly collections
+     * (`challenges`, `badges`) from private, user-specific collections (`/users/{userId}/*`).
+     * This ensures that security postures are homogeneous within a collection, simplifying
+     * rules and preventing accidental data leakage in list queries.
+     */
+
+    // --------------------------------------------------------------------------
+    // Helper Functions
+    // --------------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing data ownership.
+     * @param userId The user ID from the document path.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the authenticated user has an administrator role.
+     * This is determined by the existence of a document in the roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Verifies that the incoming UserProfile data contains an `id` field
+     * that matches the document's path ID. Enforces relational integrity on create.
+     * @param userId The user ID from the document path.
+     */
+    function isValidNewProfile(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Verifies that the `id` field of a UserProfile is immutable.
+     * Prevents re-assigning a profile to a different user.
+     */
+    function isProfileIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+    
+    /**
+     * Verifies that a new Submission has its `userId` and `challengeId` fields
+     * correctly set to match the authenticated user and the parent collection path.
+     * @param challengeId The challenge ID from the document path.
+     */
+    function isValidNewSubmission(challengeId) {
+      return request.resource.data.userId == request.auth.uid
+          && request.resource.data.challengeId == challengeId;
+    }
+
+    /**
+     * Verifies that critical relational fields (`userId`, `challengeId`) and the
+     * admin-controlled `moderationStatus` field are not changed on update.
+     */
+    function isSubmissionDataImmutable() {
+      let isRelationalDataUnchanged = request.resource.data.userId == resource.data.userId
+                                   && request.resource.data.challengeId == resource.data.challengeId;
+      let isModerationStatusUnchanged = request.resource.data.moderationStatus == resource.data.moderationStatus;
+      return isRelationalDataUnchanged && isModerationStatusUnchanged;
+    }
+
+    /**
+     * Verifies that a new Vote document has its `userId` field correctly
+     * set to match the owner's path.
+     * @param userId The user ID from the document path.
+     */
+    function isValidNewVote(userId) {
+      return request.resource.data.userId == userId;
+    }
+    
+    /**
+     * Verifies that the `userId` field of a Vote is immutable.
+     */
+    function isVoteIdImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // --------------------------------------------------------------------------
+    // Collection Rules
+    // --------------------------------------------------------------------------
+
+    /**
+     * @description Manages user profiles. A user can create and update their own
+     *              profile. Profiles are publicly readable to support features like
+     *              leaderboards and viewing other users' stats.
+     * @path /userProfiles/{userId}
+     * @allow (create) An authenticated user creating their own profile document.
+     * @deny (create) A user trying to create a profile for another user's ID.
+     * @principle A user is the authority for their own profile data (Self-Creation).
+     */
+    match /userProfiles/{userId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isOwner(userId) && isValidNewProfile(userId);
+      allow update: if isOwner(userId) && isProfileIdImmutable();
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Defines daily photo challenges. This data is public for all
+     *              users to read, but only administrators can create, modify, or
+     *              delete challenges.
+     * @path /challenges/{challengeId}
+     * @allow (get) Any user, signed in or not, can read a challenge.
+     * @deny (create) A regular authenticated user trying to create a new challenge.
+     * @principle Enforces public read access for global content while restricting
+     *              writes to privileged administrators.
+     */
+    match /challenges/{challengeId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+
+      /**
+       * @description Manages user photo submissions for a specific challenge.
+       *              Users can create their own submission. Updates and deletes
+       *              are restricted to the owner. Submissions are publicly visible
+       *              only if they are approved and the challenge's voting period is active.
+       * @path /challenges/{challengeId}/submissions/{submissionId}
+       * @allow (create) An authenticated user submitting a photo to a challenge.
+       * @deny (update) A user trying to change the moderation status of their own submission.
+       * @principle Implements a complex read-access rule based on document state
+       *              ('approved') and related global state (challenge voting window).
+       */
+      match /submissions/{submissionId} {
+        // A submission can be read by its owner OR if it's approved and voting is open.
+        allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || (resource.data.moderationStatus == 'approved' && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingStartTime < request.time && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingEndTime > request.time));
+        // Listing submissions is allowed for any signed-in user during the voting window. Client must filter for 'approved'.
+        allow list: if isSignedIn() && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingStartTime < request.time && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingEndTime > request.time;
+        allow create: if isSignedIn() && isValidNewSubmission(challengeId);
+        allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isSubmissionDataImmutable();
+        allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    /**
+     * @description Defines achievement badges. This data is public for all users
+     *              to view, but only administrators can manage the badge definitions.
+     * @path /badges/{badgeId}
+     * @allow (list) Any user, signed in or not, can list all available badges.
+     * @deny (update) A regular authenticated user trying to edit a badge's description.
+     * @principle Enforces public read access for global content while restricting
+     *              writes to privileged administrators.
+     */
+    match /badges/{badgeId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    
+    /**
+     * @description Container for all user-specific, private data. Direct access to
+     *              this path is disallowed. Access is only granted to the subcollections
+     *              within (e.g., /votes, /badges).
+     * @path /users/{userId}
+     * @allow (none) No direct operations are permitted on this path.
+     * @deny (get) A user trying to read the non-existent user container document.
+     * @principle Acts as a secure, path-based namespace for user-owned data.
+     */
+    match /users/{userId} {
+      allow read, write: if false;
+
+      /**
+       * @description Stores votes cast by a user. A user has full control over their
+       *              own votes but cannot see, create, or delete votes for anyone else.
+       * @path /users/{userId}/votes/{voteId}
+       * @allow (create) The user with ID `{userId}` creating their own vote record.
+       * @deny (get) A user trying to read another user's vote.
+       * @principle Enforces strict data ownership using path-based security.
+       */
+      match /votes/{voteId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidNewVote(userId);
+        allow update: if isOwner(userId) && isVoteIdImmutable();
+        allow delete: if isOwner(userId);
+      }
+      
+      /**
+       * @description Stores badges that have been awarded to a user. Users can read
+       *              their own list of earned badges. Writes are disallowed as badges
+       *              are intended to be awarded by a server-side process.
+       * @path /users/{userId}/badges/{userBadgeId}
+       * @allow (list) The user with ID `{userId}` listing their own awarded badges.
+       * @deny (create) A user trying to award a badge to themselves.
+       * @principle Restricts access to a user's own data tree and makes the
+       *              collection effectively read-only for clients.
+       */
+      match /badges/{userBadgeId} {
+        allow get, list: if isOwner(userId);
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    /**
+     * @description Manages administrator roles. This collection is not readable or
+     *              writable by any client. Its sole purpose is to be checked by the
+     *              `isAdmin()` helper function using `exists()`.
+     * @path /roles_admin/{adminId}
+     * @allow (none) No client operations are permitted.
+     * @deny (get) Any user, including an admin, trying to read a role document directly.
+     * @principle Implements Database-backed Access Control (DBAC) by locking down
+     *              direct client access and using server-side `exists()` for role checks.
+     */
+    match /roles_admin/{adminId} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,450 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's public profile, statistics, and achievement progress within the LensLock application. This entity stores data separate from authentication system details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity. This typically corresponds to the user's authentication system ID."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The publicly displayed name of the user."
+        },
+        "profileImageUrl": {
+          "type": "string",
+          "description": "URL to the user's profile picture.",
+          "format": "uri"
+        },
+        "currentStreak": {
+          "type": "number",
+          "description": "The current consecutive daily submission streak of the user."
+        },
+        "highestStreak": {
+          "type": "number",
+          "description": "The highest consecutive daily submission streak achieved by the user."
+        },
+        "totalSubmissions": {
+          "type": "number",
+          "description": "Total number of photos submitted by the user across all challenges."
+        },
+        "totalUpvotesReceived": {
+          "type": "number",
+          "description": "Total number of upvotes received by the user on all their submissions."
+        },
+        "totalWins": {
+          "type": "number",
+          "description": "Total number of challenges won by the user, leading to a Hall of Fame entry."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "displayName",
+        "currentStreak",
+        "highestStreak",
+        "totalSubmissions",
+        "totalUpvotesReceived",
+        "totalWins",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Challenge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Challenge",
+      "type": "object",
+      "description": "Defines a daily photo challenge, including its topic, rules, and crucial time windows for submission and voting.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Challenge entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or theme of the daily photo challenge."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description or prompt for the challenge, guiding user submissions."
+        },
+        "challengeDate": {
+          "type": "string",
+          "description": "The specific calendar date for which this challenge is active (e.g., 'YYYY-MM-DD').",
+          "format": "date"
+        },
+        "submissionStartTime": {
+          "type": "string",
+          "description": "The timestamp when photo submissions for this challenge officially begin.",
+          "format": "date-time"
+        },
+        "submissionEndTime": {
+          "type": "string",
+          "description": "The timestamp when photo submissions for this challenge officially end.",
+          "format": "date-time"
+        },
+        "votingStartTime": {
+          "type": "string",
+          "description": "The timestamp when voting on submissions for this challenge officially begins.",
+          "format": "date-time"
+        },
+        "votingEndTime": {
+          "type": "string",
+          "description": "The timestamp when voting on submissions for this challenge officially ends.",
+          "format": "date-time"
+        },
+        "winningSubmissionId": {
+          "type": "string",
+          "description": "Reference to the Submission entity that was declared the winner of this challenge. (Relationship: Challenge 1:1 Submission)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the challenge definition was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the challenge definition was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "challengeDate",
+        "submissionStartTime",
+        "submissionEndTime",
+        "votingStartTime",
+        "votingEndTime",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Submission": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Submission",
+      "type": "object",
+      "description": "Represents a user's photo entry for a specific daily challenge, including its metadata, status, and analysis results.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Submission entity."
+        },
+        "challengeId": {
+          "type": "string",
+          "description": "Reference to the Challenge entity this submission belongs to. (Relationship: Challenge 1:N Submission)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile entity that submitted this photo. This ID is kept internal for tracking and analytics, facilitating anonymous display. (Relationship: UserProfile 1:N Submission)"
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL to the submitted photo, typically after compression and hosting in cloud storage.",
+          "format": "uri"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "Optional URL to a smaller, optimized thumbnail version of the submitted photo for display in lists.",
+          "format": "uri"
+        },
+        "submittedAt": {
+          "type": "string",
+          "description": "Timestamp when the photo was submitted by the user.",
+          "format": "date-time"
+        },
+        "upvoteCount": {
+          "type": "number",
+          "description": "Cached count of upvotes received for this submission, updated in real-time or periodically."
+        },
+        "aiAnalysisResult": {
+          "type": "string",
+          "description": "Textual summary of the generative AI's analysis of the photo's alignment with the challenge topic, used for moderation."
+        },
+        "moderationStatus": {
+          "type": "string",
+          "description": "Current moderation status of the submission (e.g., 'pending', 'approved', 'rejected', 'flagged'), influencing its visibility for voting."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the submission record was first created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the submission record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "challengeId",
+        "userId",
+        "photoUrl",
+        "submittedAt",
+        "upvoteCount",
+        "moderationStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Vote": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vote",
+      "type": "object",
+      "description": "Records an individual user's upvote on a specific photo submission. The absence of a Vote record implies no upvote or an 'unlike' action.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Vote entity."
+        },
+        "submissionId": {
+          "type": "string",
+          "description": "Reference to the Submission entity that received the upvote. (Relationship: Submission 1:N Vote)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile entity who cast the upvote. (Relationship: UserProfile 1:N Vote)"
+        },
+        "votedAt": {
+          "type": "string",
+          "description": "Timestamp when the vote was cast.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "submissionId",
+        "userId",
+        "votedAt"
+      ]
+    },
+    "Badge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Badge",
+      "type": "object",
+      "description": "Defines a specific achievement badge that users can earn within the application, including its appearance and criteria.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Badge entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the badge (e.g., 'First Submission', '7-Day Streak', 'Hall of Famer')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of what the badge represents and its significance."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to the icon or image asset representing the badge.",
+          "format": "uri"
+        },
+        "criteria": {
+          "type": "string",
+          "description": "A textual description of the conditions or actions required for a user to earn this badge."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the badge definition was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the badge definition was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "imageUrl",
+        "criteria",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserBadge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserBadge",
+      "type": "object",
+      "description": "Represents an instance of a badge awarded to a specific user, serving as a join entity between UserProfile and Badge.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserBadge entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile entity that earned the badge. (Relationship: UserProfile 1:N UserBadge)"
+        },
+        "badgeId": {
+          "type": "string",
+          "description": "Reference to the Badge entity that was awarded. (Relationship: Badge 1:N UserBadge)"
+        },
+        "awardedAt": {
+          "type": "string",
+          "description": "Timestamp when the badge was awarded to the user.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "badgeId",
+        "awardedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/userProfiles/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profiles. Access is restricted to the owning user for full profile data, with selected fields potentially visible to the public. Achieves authorization independence through path-based ownership matching 'request.auth.uid' to '{userId}'.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user, matching their Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/challenges/{challengeId}",
+        "definition": {
+          "entityName": "Challenge",
+          "schema": {
+            "$ref": "#/backend/entities/Challenge"
+          },
+          "description": "Stores daily photo challenge definitions. This collection is publicly readable to all users. Write access is restricted to designated administrators. Authorization rules will check for admin roles via an existence-based DBAC model (e.g., /roles_admin/{uid}). It may include denormalized 'winningSubmissionId' and potentially 'winnerUserId', 'winnerDisplayName', 'winnerPhotoUrl' to avoid subsequent reads for Hall of Fame display.",
+          "params": [
+            {
+              "name": "challengeId",
+              "description": "The unique ID for the specific daily challenge."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/challenges/{challengeId}/submissions/{submissionId}",
+        "definition": {
+          "entityName": "Submission",
+          "schema": {
+            "$ref": "#/backend/entities/Submission"
+          },
+          "description": "Stores photo submissions for each challenge. Each document includes 'userId' for explicit ownership, enabling authorization independence. Read access for unapproved submissions is limited to the owner. Approved submissions are publicly readable during the voting window. 'moderationStatus' is used for explicit state modeling. Includes denormalized 'challengeId' and 'userId' for robust rules.",
+          "params": [
+            {
+              "name": "challengeId",
+              "description": "The unique ID of the parent challenge."
+            },
+            {
+              "name": "submissionId",
+              "description": "The unique ID for the photo submission."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/votes/{voteId}",
+        "definition": {
+          "entityName": "Vote",
+          "schema": {
+            "$ref": "#/backend/entities/Vote"
+          },
+          "description": "Records individual user votes on submissions. Path-based ownership ('userId') ensures only the voting user can read, create, or delete their own vote, achieving authorization independence. To enforce unique voting per submission per user, the client-side should ensure 'voteId' is derived from 'submissionId'. Includes denormalized 'submissionId' and 'userId' for robust rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who cast the vote, matching their Firebase Authentication UID."
+            },
+            {
+              "name": "voteId",
+              "description": "The unique ID for this vote record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/badges/{badgeId}",
+        "definition": {
+          "entityName": "Badge",
+          "schema": {
+            "$ref": "#/backend/entities/Badge"
+          },
+          "description": "Defines achievement badges. This collection is publicly readable. Write access is restricted to designated administrators.",
+          "params": [
+            {
+              "name": "badgeId",
+              "description": "The unique ID for the specific badge."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/badges/{userBadgeId}",
+        "definition": {
+          "entityName": "UserBadge",
+          "schema": {
+            "$ref": "#/backend/entities/UserBadge"
+          },
+          "description": "Tracks badges awarded to specific users. Path-based ownership ('userId') ensures only the owning user can read or list their awarded badges, achieving authorization independence. Includes denormalized 'userId' and 'badgeId' for robust rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who earned the badge, matching their Firebase Authentication UID."
+            },
+            {
+              "name": "userBadgeId",
+              "description": "The unique ID for this instance of a user earning a badge."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "An existence-based collection to assign administrator roles. Any document existing at '/roles_admin/{uid}' grants administrative privileges to the user with that UID. This adheres to the DBAC principle and enables authorization checks without custom claims.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique ID of the user who is assigned the admin role, matching their Firebase Authentication UID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure for LensLock is designed prioritizing Authorization Independence, Structural Segregation, and effective Query Access Patterns (QAPs) to ensure security, scalability, and debuggability. \n\n**Authorization Independence (CRITICAL):**\nThis design meticulously avoids `get()` calls in security rules for user-based authorization. For entities like `UserProfile`, `Vote`, and `UserBadge`, authorization is achieved through **Path-Based Ownership**. The `userId` in the path (e.g., `/users/{userId}/...`) directly corresponds to `request.auth.uid`, making ownership checks simple and atomic. For `Submission` documents, the `userId` of the submitter is explicitly denormalized into the document (`resource.data.userId`), allowing rules to verify `request.auth.uid == resource.data.userId` without needing to fetch a parent document or another user's profile. \n\nAn exception to strict `get()` avoidance is acknowledged for time-based access to `Challenge` data (e.g., `votingStartTime`, `votingEndTime`) when evaluating `Submission` visibility. Since `Challenge` documents are publicly readable and these timestamps represent global, static state rather than user-specific authorization attributes, a `get()` call to the public `Challenge` document is deemed an acceptable compromise, as it does not introduce hidden or complex authorization dependencies.\n\n**Structural Segregation (Homogeneous Security Posture):**\nData is organized into collections where all documents share the same security requirements. Publicly accessible information (e.g., `Challenges`, `Badges`) resides in top-level collections, allowing `list` and `read` access for all. Private user data (e.g., `UserProfile`, `Vote`, `UserBadge`) is housed within user-specific subcollections (`/users/{userId}/...`), ensuring that all documents under a given `userId` path implicitly belong to that user. Submissions are organized under challenges (`/challenges/{challengeId}/submissions/{submissionId}`), with their public visibility controlled by their `moderationStatus` field, providing a homogeneous security posture for submissions within a specific challenge context.\n\n**Query Access Patterns (QAPs):**\n1.  **Public Lists:** Collections like `/challenges` and `/badges` are fully public, allowing efficient `list` operations without requiring security rule filters. Rules like `allow list, read: true;` are straightforward.\n2.  **User-Owned Data:** For `/users/{userId}/votes` and `/users/{userId}/badges`, a user can directly query and list their own data, as the `userId` in the path (e.g., `/users/$(request.auth.uid)/votes`) inherently scopes the query to their owned documents. Rules like `allow list, read: if request.auth.uid == userId;` naturally enable secure `list` operations.\n3.  **Submissions for Voting:** The `/challenges/{challengeId}/submissions` collection supports listing approved submissions for voting. The `moderationStatus` field (e.g., 'approved') is used for explicit state modeling, allowing client queries to filter for `moderationStatus == 'approved'` and rules to verify this, along with the active voting window, without filtering on `userId`. This ensures that only relevant and publicly available submissions are retrieved.\n\n**DBAC (No Custom Claims) & Data Clarity:**\nAdministrator roles are managed using an **Existence-Based Access Control** model through a dedicated collection like `/roles_admin/{adminId}`. The presence of a document at this path grants admin privileges to `request.auth.uid`, avoiding custom Firebase Authentication claims. Explicit state modeling is used for `Submission.moderationStatus` (e.g., 'pending', 'approved'), making the state of each submission clear and easily verifiable in security rules. Wildcards are consistently descriptive (e.g., `{userId}`, `{challengeId}`). Denormalization considerations for `Challenge` (e.g., `winningSubmissionId`, and potentially `winnerDisplayName`, `winnerPhotoUrl`) are noted to optimize read performance for Hall of Fame displays."
+  }
+}
