@@ -32,9 +32,10 @@ const generateAvatarFlow = ai.defineFlow(
   },
   async prompt => {
     const { media } = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+      model: 'googleai/gemini-2.5-flash-image',
       prompt: `Generate a cute, cartoon-style avatar based on the prompt: '${prompt}'. The avatar should be a single character, suitable as a profile picture. Use a simple, flat illustration style with vibrant colors on a clean, solid-color background. The image must be square.`,
       config: {
+        responseModalities: ['TEXT', 'IMAGE'],
         aspectRatio: '1:1',
       }
     });

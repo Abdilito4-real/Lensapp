@@ -1,16 +1,48 @@
+'use client';
+
 import Image from 'next/image';
+import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
-import { users, submissions } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Flame, Heart } from 'lucide-react';
-import { findUserById } from '@/lib/data';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
+import type { UserProfile, Submission } from '@/lib/definitions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LeaderboardPage() {
-    const topStreaks = [...users].sort((a, b) => b.streak - a.streak);
-    const topSubmissions = [...submissions].sort((a, b) => b.upvotes - a.upvotes);
+    const firestore = useFirestore();
+
+    const topStreaksQuery = useMemoFirebase(() => 
+        firestore 
+            ? query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)) 
+            : null,
+        [firestore]
+    );
+    const { data: topStreaks, isLoading: streaksLoading } = useCollection<UserProfile>(topStreaksQuery);
+
+    const topSubmissionsQuery = useMemoFirebase(() => 
+        firestore 
+            ? query(collectionGroup(firestore, 'submissions'), orderBy('upvoteCount', 'desc'), limit(10))
+            : null,
+        [firestore]
+    );
+    const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
+
+    const userProfilesQuery = useMemoFirebase(() => 
+        firestore ? collection(firestore, 'userProfiles') : null,
+        [firestore]
+    );
+    const { data: userProfiles, isLoading: profilesLoading } = useCollection<UserProfile>(userProfilesQuery);
+
+    const userProfilesMap = useMemo(() => {
+        if (!userProfiles) return new Map<string, UserProfile>();
+        return new Map(userProfiles.map(p => [p.id, p]));
+    }, [userProfiles]);
+
+    const isLoading = streaksLoading || submissionsLoading || profilesLoading;
 
     return (
         <div className="space-y-8">
@@ -27,63 +59,95 @@ export default function LeaderboardPage() {
                 </TabsList>
                 <TabsContent value="streaks" className="mt-6">
                     <div className="space-y-4">
-                        {topStreaks.map((user, index) => {
-                            const avatar = PlaceHolderImages.find(p => p.id === user.avatarId);
-                            return (
+                        {isLoading ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                                <Card key={index}>
+                                    <CardContent className="p-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <Skeleton className="h-10 w-10 rounded-full" />
+                                            <Skeleton className="h-6 w-32" />
+                                        </div>
+                                        <Skeleton className="h-6 w-20" />
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) : topStreaks && topStreaks.length > 0 ? (
+                            topStreaks.map((user, index) => (
                                 <Card key={user.id}>
                                     <CardContent className="p-4 flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <span className="text-lg font-bold w-6 text-center text-muted-foreground">{index + 1}</span>
                                             <Avatar>
-                                                <AvatarImage src={avatar?.imageUrl} alt={user.name} />
-                                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                                <AvatarImage src={user.profileImageUrl} alt={user.displayName} />
+                                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                             </Avatar>
-                                            <span className="font-medium">{user.name}</span>
+                                            <span className="font-medium">{user.displayName}</span>
                                         </div>
                                         <Badge variant="secondary" className="gap-1.5 pl-2">
                                             <Flame className="h-4 w-4 text-accent" />
-                                            {user.streak} days
+                                            {user.currentStreak} days
                                         </Badge>
                                     </CardContent>
                                 </Card>
-                            )
-                        })}
+                            ))
+                        ) : (
+                            <p className="text-muted-foreground text-center py-8">No streaks on the board yet!</p>
+                        )}
                     </div>
                 </TabsContent>
                 <TabsContent value="submissions" className="mt-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                         {topSubmissions.map((submission, index) => {
-                            const image = PlaceHolderImages.find(p => p.id === submission.imageId);
-                            const user = findUserById(submission.userId);
-                            const avatar = user ? PlaceHolderImages.find(p => p.id === user.avatarId) : undefined;
-                            return (
-                                <Card key={submission.id} className="overflow-hidden group">
+                        {isLoading ? (
+                             Array.from({ length: 4 }).map((_, index) => (
+                                <Card key={index} className="overflow-hidden group">
                                     <CardContent className="p-0 relative">
-                                        <div className="absolute top-2 left-2 z-10 bg-black/50 text-white h-8 w-8 rounded-full flex items-center justify-center font-bold text-lg">{index + 1}</div>
                                         <div className="relative aspect-[4/3]">
-                                            {image && (
-                                                <Image src={image.imageUrl} alt="Top submission" fill sizes="(max-width: 640px) 90vw, 45vw" className="object-cover" data-ai-hint={image.imageHint} />
-                                            )}
+                                           <Skeleton className="h-full w-full" />
                                         </div>
                                         <div className="p-4 flex justify-between items-center">
                                             <div className="flex items-center gap-2">
-                                                {user && avatar &&
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={avatar.imageUrl} alt={user.name} />
-                                                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                }
-                                                <span className="text-sm font-medium">{user?.name || 'Anonymous'}</span>
+                                                <Skeleton className="h-8 w-8 rounded-full" />
+                                                <Skeleton className="h-5 w-24" />
                                             </div>
-                                            <Badge variant="outline" className="gap-1.5">
-                                                <Heart className="h-3.5 w-3.5 text-accent fill-current" />
-                                                {submission.upvotes}
-                                            </Badge>
+                                            <Skeleton className="h-6 w-16" />
                                         </div>
                                     </CardContent>
                                 </Card>
-                            )
-                        })}
+                             ))
+                        ) : topSubmissions && topSubmissions.length > 0 ? (
+                            topSubmissions.map((submission, index) => {
+                                const user = userProfilesMap.get(submission.userId);
+                                return (
+                                    <Card key={submission.id} className="overflow-hidden group">
+                                        <CardContent className="p-0 relative">
+                                            <div className="absolute top-2 left-2 z-10 bg-black/50 text-white h-8 w-8 rounded-full flex items-center justify-center font-bold text-lg">{index + 1}</div>
+                                            <div className="relative aspect-[4/3]">
+                                                <Image src={submission.photoUrl} alt="Top submission" fill sizes="(max-width: 640px) 90vw, 45vw" className="object-cover" />
+                                            </div>
+                                            <div className="p-4 flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    {user &&
+                                                        <Avatar className="h-8 w-8">
+                                                            <AvatarImage src={user.profileImageUrl} alt={user.displayName} />
+                                                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                                        </Avatar>
+                                                    }
+                                                    <span className="text-sm font-medium">{user?.displayName || 'Anonymous'}</span>
+                                                </div>
+                                                <Badge variant="outline" className="gap-1.5">
+                                                    <Heart className="h-3.5 w-3.5 text-accent fill-current" />
+                                                    {submission.upvoteCount}
+                                                </Badge>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })
+                        ) : (
+                            <div className="col-span-1 sm:col-span-2 text-center py-8">
+                                <p className="text-muted-foreground">No submissions have been upvoted yet.</p>
+                            </div>
+                        )}
                     </div>
                 </TabsContent>
             </Tabs>
