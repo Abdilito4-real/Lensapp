@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
 import { Flame, Heart } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
+import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -25,7 +25,12 @@ export default function LeaderboardPage() {
 
     const topSubmissionsQuery = useMemoFirebase(() => 
         firestore 
-            ? query(collectionGroup(firestore, 'submissions'), orderBy('upvoteCount', 'desc'), limit(10))
+            ? query(
+                collectionGroup(firestore, 'submissions'), 
+                where('moderationStatus', '==', 'approved'),
+                orderBy('upvoteCount', 'desc'), 
+                limit(10)
+              )
             : null,
         [firestore]
     );
