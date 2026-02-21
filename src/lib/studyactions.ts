@@ -52,6 +52,7 @@ export async function generateStudyTools(
     };
   } catch (e) {
     console.error(e);
-    return { error: 'Failed to generate study tools. The AI model may be overloaded or the image could not be processed. Please try again.' };
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { error: `Failed to generate study tools: ${errorMessage}. The AI model may be overloaded or the image could not be processed. Please try again.` };
   }
 }
