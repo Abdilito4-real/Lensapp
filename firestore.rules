@@ -165,38 +165,26 @@ service cloud.firestore {
     match /challenges/{challengeId} {
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
-
-      /**
-       * @description Manages user photo submissions for a specific challenge.
-       *              Users can create their own submission. Updates and deletes
-       *              are restricted to the owner. Submissions are publicly visible
-       *              only if they are approved and the challenge's voting period is active.
-       * @path /challenges/{challengeId}/submissions/{submissionId}
-       * @allow (create) An authenticated user submitting a photo to a challenge.
-       * @deny (update) A user trying to change the moderation status of their own submission.
-       * @principle Implements a complex read-access rule based on document state
-       *              ('approved') and related global state (challenge voting window).
-       */
-      match /submissions/{submissionId} {
-        // A submission can be read by its owner OR if it's approved and voting is open.
-        allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || (resource.data.moderationStatus == 'approved' && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingStartTime < request.time && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingEndTime > request.time));
-        // Listing submissions is allowed for any signed-in user during the voting window. Client must filter for 'approved'.
-        allow list: if isSignedIn() && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingStartTime < request.time && get(/databases/$(database)/documents/challenges/$(challengeId)).data.votingEndTime > request.time;
-        allow create: if isSignedIn() && isValidNewSubmission(challengeId);
-        allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isSubmissionDataImmutable();
-        allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      }
     }
     
     /**
-     * @description This rule is specifically for the public leaderboard's collection group query.
-     *              It allows any user (authenticated or not) to query the 'submissions'
-     *              collection group, which is necessary to display the top submissions.
-     *              The 'get' rule ensures that only 'approved' submissions can actually be read.
+     * @description This rule is specifically for all 'submissions' documents,
+     *              handling both direct access and collection group queries for leaderboards.
+     *              It allows any user to query the 'submissions' collection group,
+     *              and the 'get' rule ensures only 'approved' documents can be read by the public.
      */
     match /{path=**}/submissions/{submissionId} {
+      // Allow listing for anyone. Client queries MUST filter for approved submissions.
       allow list: if true;
-      allow get: if resource.data.moderationStatus == 'approved' || (isSignedIn() && request.auth.uid == resource.data.userId);
+      // Allow reading a submission if it's approved OR if the requestor is the owner.
+      allow get: if resource.data.moderationStatus == 'approved' 
+                 || (isSignedIn() && request.auth.uid == resource.data.userId);
+      // Allow creating a submission if signed in and the submission userId matches.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Allow owner to update, but not change key fields.
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isSubmissionDataImmutable();
+      // Allow owner to delete.
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     /**
@@ -273,5 +261,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
