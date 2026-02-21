@@ -1,23 +1,81 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/context/auth-context';
+import { useState, useMemo } from 'react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { users, findUserById } from '@/lib/data';
+import { UserProfile } from '@/lib/definitions';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Search, UserPlus, Send, Check, X, LogIn, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { collection } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HomePage() {
-    const { user, isAuthenticated } = useAuth();
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
 
-    if (!isAuthenticated || !user) {
+    const userProfilesCollection = useMemoFirebase(() => collection(firestore, 'userProfiles'), [firestore]);
+    const { data: userProfiles, isLoading: areProfilesLoading } = useCollection<UserProfile>(userProfilesCollection);
+
+    const handleSendStreak = (friendName: string) => {
+        toast({
+            title: `Feature Coming Soon!`,
+            description: `Sending streaks to friends is not yet implemented.`,
+        });
+    };
+
+    const handleAddFriend = (newFriendName: string) => {
+         toast({
+            title: `Feature Coming Soon!`,
+            description: `Adding friends is not yet implemented.`,
+        });
+    }
+
+    const handleRequest = (requestorName: string, accept: boolean) => {
+        toast({
+            title: `Feature Coming Soon!`,
+            description: `Accepting/declining friend requests is not yet implemented.`,
+        });
+    }
+
+    const searchResults = useMemo(() => {
+        if (!searchTerm || !userProfiles) return [];
+        return userProfiles.filter(u => 
+            u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) && 
+            u.id !== user?.uid
+        );
+    }, [searchTerm, userProfiles, user]);
+
+    const discoverUsers = useMemo(() => {
+        if (!userProfiles || !user) return [];
+        // Simple "discover" logic: show users who aren't the current user
+        return userProfiles.filter(u => u.id !== user.uid).slice(0, 5);
+    }, [userProfiles, user]);
+
+
+    if (isUserLoading) {
+        return (
+            <div className="space-y-8">
+                <div className="text-center">
+                    <Skeleton className="h-10 w-1/2 mx-auto" />
+                    <Skeleton className="h-5 w-2/3 mx-auto mt-2" />
+                </div>
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
+                 </div>
+            </div>
+        )
+    }
+
+    if (!user) {
         return (
             <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
                  <LogIn className="w-16 h-16 text-muted-foreground" />
@@ -25,41 +83,6 @@ export default function HomePage() {
                  <p className="text-muted-foreground">Log in to find friends and manage your connections.</p>
             </div>
         )
-    }
-
-    // Mock data filtering
-    const currentUser = findUserById(user.id);
-    const friendRequests = currentUser?.friendRequests.map(findUserById).filter(Boolean) || [];
-    const friends = currentUser?.friends.map(findUserById).filter(Boolean) || [];
-    
-    const allUserIds = new Set([user.id, ...currentUser?.friends || [], ...currentUser?.friendRequests || []]);
-    const newUsers = users.filter(u => !allUserIds.has(u.id)).slice(0, 5);
-    
-    const searchResults = users.filter(u => 
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        searchTerm &&
-        u.id !== user.id
-    );
-
-    const handleSendStreak = (friendName: string) => {
-        toast({
-            title: `Streak Sent!`,
-            description: `You've sent a streak reminder to ${friendName}.`,
-        });
-    };
-
-    const handleAddFriend = (newFriendName: string) => {
-         toast({
-            title: `Friend Request Sent!`,
-            description: `Your friend request to ${newFriendName} has been sent.`,
-        });
-    }
-
-    const handleRequest = (requestorName: string, accept: boolean) => {
-        toast({
-            title: `Request ${accept ? 'Accepted' : 'Declined'}`,
-            description: `You have ${accept ? 'accepted' : 'declined'} the friend request from ${requestorName}.`,
-        });
     }
 
     return (
@@ -90,18 +113,18 @@ export default function HomePage() {
                     </div>
                     {searchTerm && (
                         <div className="mt-4 space-y-2">
-                            {searchResults.length > 0 ? searchResults.map(foundUser => {
-                                const avatar = PlaceHolderImages.find(p => p.id === foundUser.avatarId);
+                            {areProfilesLoading ? <Skeleton className="h-10 w-full" /> : 
+                            searchResults.length > 0 ? searchResults.map(foundUser => {
                                 return (
                                     <div key={foundUser.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
                                         <div className="flex items-center gap-4">
                                             <Avatar>
-                                                <AvatarImage src={avatar?.imageUrl} alt={foundUser.name} />
-                                                <AvatarFallback>{foundUser.name.charAt(0)}</AvatarFallback>
+                                                <AvatarImage src={foundUser.profileImageUrl} alt={foundUser.displayName} />
+                                                <AvatarFallback>{foundUser.displayName.charAt(0)}</AvatarFallback>
                                             </Avatar>
-                                            <span className="font-medium">{foundUser.name}</span>
+                                            <span className="font-medium">{foundUser.displayName}</span>
                                         </div>
-                                        <Button size="sm" variant="outline" onClick={() => handleAddFriend(foundUser.name)}>
+                                        <Button size="sm" variant="outline" onClick={() => handleAddFriend(foundUser.displayName)}>
                                             <UserPlus className="mr-2 h-4 w-4" /> Add
                                         </Button>
                                     </div>
@@ -116,31 +139,10 @@ export default function HomePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Friend Requests</CardTitle>
-                        <CardDescription>
-                            {friendRequests.length > 0 
-                                ? `You have ${friendRequests.length} new friend request${friendRequests.length > 1 ? 's' : ''}.`
-                                : "You have no new friend requests."}
-                        </CardDescription>
+                        <CardDescription>You have no new friend requests.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        {friendRequests.length > 0 ? friendRequests.map(requestor => {
-                            const avatar = PlaceHolderImages.find(p => p.id === requestor.avatarId);
-                            return (
-                                <div key={requestor.id} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar>
-                                            <AvatarImage src={avatar?.imageUrl} alt={requestor.name} />
-                                            <AvatarFallback>{requestor.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <span className="font-medium">{requestor.name} wants to be your friend.</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button size="icon" variant="outline" onClick={() => handleRequest(requestor.name, false)}><X className="h-4 w-4"/></Button>
-                                        <Button size="icon" onClick={() => handleRequest(requestor.name, true)}><Check className="h-4 w-4"/></Button>
-                                    </div>
-                                </div>
-                            )
-                        }) : <p className="text-sm text-muted-foreground text-center py-4">No new requests.</p>}
+                    <CardContent>
+                         <p className="text-sm text-muted-foreground text-center py-4">No new requests.</p>
                     </CardContent>
                 </Card>
 
@@ -149,24 +151,8 @@ export default function HomePage() {
                         <CardTitle>My Friends</CardTitle>
                         <CardDescription>Send streaks to your friends to keep them motivated.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        {friends.length > 0 ? friends.map(friend => {
-                            const avatar = PlaceHolderImages.find(p => p.id === friend.avatarId);
-                            return (
-                                <div key={friend.id} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar>
-                                            <AvatarImage src={avatar?.imageUrl} alt={friend.name} />
-                                            <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <span className="font-medium">{friend.name}</span>
-                                    </div>
-                                    <Button size="sm" variant="outline" onClick={() => handleSendStreak(friend.name)}>
-                                        <Send className="mr-2 h-4 w-4" /> Send Streak
-                                    </Button>
-                                </div>
-                            )
-                        }) : <p className="text-sm text-muted-foreground text-center py-4">You haven't added any friends yet.</p>}
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground text-center py-4">You haven't added any friends yet.</p>
                     </CardContent>
                 </Card>
 
@@ -176,23 +162,30 @@ export default function HomePage() {
                         <CardDescription>Connect with other users on Lens.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {newUsers.map(newUser => {
-                            const avatar = PlaceHolderImages.find(p => p.id === newUser.avatarId);
-                            return (
-                                <div key={newUser.id} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar>
-                                            <AvatarImage src={avatar?.imageUrl} alt={newUser.name} />
-                                            <AvatarFallback>{newUser.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <span className="font-medium">{newUser.name}</span>
+                        {areProfilesLoading ? (
+                            <div className="space-y-4">
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                        ) : discoverUsers && discoverUsers.length > 0 ? (
+                            discoverUsers.map(newUser => {
+                                return (
+                                    <div key={newUser.id} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <Avatar>
+                                                <AvatarImage src={newUser.profileImageUrl} alt={newUser.displayName} />
+                                                <AvatarFallback>{newUser.displayName.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-medium">{newUser.displayName}</span>
+                                        </div>
+                                        <Button size="sm" onClick={() => handleAddFriend(newUser.displayName)}>
+                                            <UserPlus className="mr-2 h-4 w-4" /> Add Friend
+                                        </Button>
                                     </div>
-                                    <Button size="sm" onClick={() => handleAddFriend(newUser.name)}>
-                                        <UserPlus className="mr-2 h-4 w-4" /> Add Friend
-                                    </Button>
-                                </div>
-                            )
-                        })}
+                                )
+                            })
+                        ) : <p className="text-sm text-muted-foreground text-center py-4">No new users to discover right now.</p>}
                     </CardContent>
                 </Card>
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/context/auth-context';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,40 +19,54 @@ import {
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState } from 'react';
-import { users } from '@/lib/data';
+import { signInAnonymously, signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/definitions';
 import { LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import Link from 'next/link';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function AuthButton() {
-  const { user, login, logout, isAuthenticated } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const firestore = useFirestore();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
 
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `userProfiles/${user.uid}`) : null), [user, firestore]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
   const handleLogin = () => {
-    // For this mock, we'll just log in the first user.
-    login(users[0]);
+    signInAnonymously(auth).catch((error) => {
+        console.error("Anonymous sign-in failed", error);
+    });
     setIsLoginDialogOpen(false);
   };
   
-  const userAvatar = PlaceHolderImages.find(p => p.id === user?.avatarId);
+  const handleLogout = () => {
+    signOut(auth);
+  }
 
-  if (isAuthenticated && user) {
+  if (isUserLoading || (user && isProfileLoading)) {
+      return <Button variant="outline" size="sm">Loading...</Button>;
+  }
+
+
+  if (user && userProfile) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={userAvatar?.imageUrl} alt={user.name} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.displayName} />
+              <AvatarFallback>{userProfile.displayName.charAt(0)}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <p className="text-sm font-medium leading-none">{userProfile.displayName}</p>
               <p className="text-xs leading-none text-muted-foreground">
-                @{user.name.toLowerCase()}
+                @{userProfile.displayName.toLowerCase().replace(' ', '')}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -64,7 +78,7 @@ export function AuthButton() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={logout}>
+          <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
@@ -84,12 +98,12 @@ export function AuthButton() {
           <DialogHeader>
             <DialogTitle>Welcome to Lens</DialogTitle>
             <DialogDescription>
-              Sign in to participate in daily challenges and vote for your favorite photos. This is a mock sign-in for demonstration.
+              Sign in anonymously to participate in daily challenges and vote for your favorite photos.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Button onClick={handleLogin} className="w-full" type="button">
-              Sign In as Demo User
+              Sign In Anonymously
             </Button>
           </div>
         </DialogContent>

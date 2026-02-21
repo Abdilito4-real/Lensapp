@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Trophy, User, BookOpen, Users, Camera } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
+import { useUser } from '@/firebase';
 import {
   Tooltip,
   TooltipContent,
@@ -22,7 +22,8 @@ const navItems = [
 
 export function DesktopNav() {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
+  const isAuthenticated = !!user;
 
   return (
     <aside className="hidden md:flex fixed right-4 top-1/2 -translate-y-1/2 z-50">

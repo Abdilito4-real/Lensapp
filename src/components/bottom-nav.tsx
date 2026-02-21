@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Trophy, BookOpen, User, Users, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/auth-context';
+import { useUser } from '@/firebase';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Users },
@@ -16,7 +16,8 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
+  const isAuthenticated = !!user;
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-t">

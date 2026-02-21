@@ -1,8 +1,7 @@
 'use client';
 
-import { useAuth } from '@/context/auth-context';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,47 +9,83 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { badges, findSubmissionById } from '@/lib/data';
 import { Flame, Heart, Trophy, LogIn } from 'lucide-react';
 import Image from 'next/image';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/definitions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
-    const { user, isAuthenticated } = useAuth();
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+
+    const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [user, firestore]);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+    // TODO: Replace with firestore data
+    const userWins = (userProfile?.totalWins > 0) ? (findSubmissionById('win-1') ? [findSubmissionById('win-1')] : []) : [];
     
-    if (!isAuthenticated || !user) {
+    if (isUserLoading || isProfileLoading) {
+      return (
+         <div className="space-y-8">
+            <Card>
+                <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
+                    <Skeleton className="h-24 w-24 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-8 w-48" />
+                        <Skeleton className="h-5 w-32" />
+                    </div>
+                    <div className="flex gap-4 sm:gap-8 pt-4 sm:pt-0">
+                         <Skeleton className="h-12 w-20" />
+                         <Skeleton className="h-12 w-20" />
+                         <Skeleton className="h-12 w-20" />
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader><CardTitle>Badges</CardTitle></CardHeader>
+                <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+            </Card>
+            <Card>
+                <CardHeader><CardTitle>Hall of Fame</CardTitle></CardHeader>
+                <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+            </Card>
+        </div>
+      )
+    }
+    
+    if (!user || !userProfile) {
         return (
             <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
                  <LogIn className="w-16 h-16 text-muted-foreground" />
                  <h2 className="text-2xl font-bold">Please Log In</h2>
                  <p className="text-muted-foreground">Log in to view your profile, streaks, and awards.</p>
-                 {/* The login button is in the header */}
             </div>
         )
     }
     
-    const userAvatar = PlaceHolderImages.find(p => p.id === user.avatarId);
-    const userWins = user.wins.map(findSubmissionById).filter(Boolean);
 
     return (
         <div className="space-y-8">
             <Card>
                 <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
                     <Avatar className="h-24 w-24">
-                        <AvatarImage src={userAvatar?.imageUrl} alt={user.name}/>
-                        <AvatarFallback className="text-3xl">{user.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={userProfile.profileImageUrl} alt={userProfile.displayName}/>
+                        <AvatarFallback className="text-3xl">{userProfile.displayName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-center sm:text-left">
-                        <h1 className="text-2xl font-bold">{user.name}</h1>
-                        <p className="text-muted-foreground">@{user.name.toLowerCase()}</p>
+                        <h1 className="text-2xl font-bold">{userProfile.displayName}</h1>
+                        <p className="text-muted-foreground">@{userProfile.displayName.toLowerCase().replace(' ', '')}</p>
                     </div>
                     <div className="flex gap-4 sm:gap-8 pt-4 sm:pt-0 border-t sm:border-t-0 sm:border-l border-border pl-0 sm:pl-8 mt-4 sm:mt-0 w-full sm:w-auto justify-center">
                         <div className="text-center">
-                            <p className="text-2xl font-bold flex items-center gap-1"><Flame className="h-6 w-6 text-orange-400" /> {user.streak}</p>
+                            <p className="text-2xl font-bold flex items-center gap-1"><Flame className="h-6 w-6 text-orange-400" /> {userProfile.currentStreak}</p>
                             <p className="text-sm text-muted-foreground">Streak</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold flex items-center gap-1"><Heart className="h-6 w-6 text-red-400" /> {user.totalUpvotes}</p>
+                            <p className="text-2xl font-bold flex items-center gap-1"><Heart className="h-6 w-6 text-red-400" /> {userProfile.totalUpvotesReceived}</p>
                             <p className="text-sm text-muted-foreground">Upvotes</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold flex items-center gap-1"><Trophy className="h-6 w-6 text-yellow-400" /> {user.wins.length}</p>
+                            <p className="text-2xl font-bold flex items-center gap-1"><Trophy className="h-6 w-6 text-yellow-400" /> {userProfile.totalWins}</p>
                             <p className="text-sm text-muted-foreground">Wins</p>
                         </div>
                     </div>
@@ -93,7 +128,7 @@ export default function ProfilePage() {
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {userWins.map(win => {
                                 const image = win ? PlaceHolderImages.find(p => p.id === win.imageId) : undefined;
-                                if (!image) return null;
+                                if (!image || !win) return null;
                                 return (
                                     <div key={win.id} className="rounded-lg overflow-hidden relative group aspect-square">
                                         <Image src={image.imageUrl} alt="Winning submission" fill sizes="(max-width: 768px) 45vw, (max-width: 1024px) 30vw, 22vw" className="object-cover" data-ai-hint={image.imageHint} />

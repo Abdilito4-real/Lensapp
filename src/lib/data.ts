@@ -1,47 +1,39 @@
-import type { User, Challenge, Submission, Badge } from '@/lib/definitions';
+import type { Challenge, Submission, Badge } from '@/lib/definitions';
 import { Flame, Star, Award, Zap, Trophy } from 'lucide-react';
 
-export const users: User[] = [
-  { id: 'user-1', name: 'Alex', avatarId: 'user-avatar-1', streak: 12, totalUpvotes: 124, wins: ['submission-1', 'win-1'], friends: ['user-2', 'user-5'], friendRequests: ['user-4'] },
-  { id: 'user-2', name: 'Bri', avatarId: 'user-avatar-2', streak: 8, totalUpvotes: 89, wins: ['win-2'], friends: ['user-1'], friendRequests: [] },
-  { id: 'user-3', name: 'Casey', avatarId: 'user-avatar-3', streak: 25, totalUpvotes: 345, wins: ['win-3', 'submission-3'], friends: [], friendRequests: [] },
-  { id: 'user-4', name: 'Drew', avatarId: 'user-avatar-4', streak: 2, totalUpvotes: 15, wins: [], friends: [], friendRequests: [] },
-  { id: 'user-5', name: 'Eli', avatarId: 'user-avatar-5', streak: 18, totalUpvotes: 210, wins: ['submission-5'], friends: ['user-1'], friendRequests: [] },
-];
-
-export const dailyChallenges: Omit<Challenge, 'id' | 'date'>[] = [
+export const dailyChallenges: Omit<Challenge, 'id' | 'challengeDate' | 'submissionStartTime' | 'submissionEndTime' | 'votingStartTime' | 'votingEndTime' | 'createdAt' | 'updatedAt'>[] = [
   {
-    topic: 'Campus Landmarks',
+    title: 'Campus Landmarks',
     description: "Showcase an iconic spot on your campus.",
   },
   {
-    topic: 'Dorm Room Life',
+    title: 'Dorm Room Life',
     description: 'Capture the unique personality of your dorm room.',
   },
   {
-    topic: 'The Study Grind',
+    title: 'The Study Grind',
     description: 'Show us your study session setup. Late nights, coffee, and books!',
   },
   {
-    topic: 'School Spirit',
+    title: 'School Spirit',
     description: "Feature your university's colors with pride.",
   },
   {
-    topic: 'Library Architecture',
+    title: 'Library Architecture',
     description: 'Find an interesting angle or detail in the campus library.',
   },
   {
-    topic: 'Cafeteria Gourmet',
+    title: 'Cafeteria Gourmet',
     description: 'Make your campus meal look like a masterpiece.',
   },
   {
-    topic: 'Life in Motion',
+    title: 'Life in Motion',
     description: 'Capture the energy of students between classes or on the quad.',
   },
 ];
 
 // Function to get the challenge for the current day
-export function getTodaysChallenge(): Challenge {
+export function getTodaysChallenge() {
     const today = new Date();
     // This calculation gives us the day number of the year (e.g., Feb 1 is day 32).
     const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
@@ -58,48 +50,52 @@ export function getTodaysChallenge(): Challenge {
     return {
         id: `challenge-${dayOfYear}`,
         ...challengeData,
-        date: tomorrow.toISOString(),
+        challengeDate: today.toISOString().split('T')[0],
+        submissionStartTime: today.toISOString(),
+        submissionEndTime: tomorrow.toISOString(),
+        votingStartTime: today.toISOString(),
+        votingEndTime: tomorrow.toISOString(),
     };
 }
 
 
-export const currentChallenge: Challenge = getTodaysChallenge();
+export const currentChallenge = getTodaysChallenge();
 
 
-export const submissions: Submission[] = [
+export const submissions: Omit<Submission, 'id'|'createdAt'|'updatedAt'>[] = [
   { 
-    id: 'submission-1', 
-    userId: 'user-1', 
     challengeId: 'challenge-0', 
-    imageId: 'submission-1', 
-    upvotes: 42, 
-    timestamp: '2023-10-26T10:00:00Z'
+    userId: 'user-1', 
+    photoUrl: 'submission-1',
+    upvoteCount: 42, 
+    submittedAt: new Date('2023-10-26T10:00:00Z').toISOString(),
+    moderationStatus: 'approved'
   },
-  { id: 'submission-2', userId: 'user-2', challengeId: 'challenge-0', imageId: 'submission-2', upvotes: 35, timestamp: '2023-10-26T11:00:00Z' },
-  { id: 'submission-3', userId: 'user-3', challengeId: 'challenge-0', imageId: 'submission-3', upvotes: 68, timestamp: '2023-10-26T12:00:00Z' },
-  { id: 'submission-4', userId: 'user-4', challengeId: 'challenge-0', imageId: 'submission-4', upvotes: 12, timestamp: '2023-10-26T13:00:00Z' },
-  { id: 'submission-5', userId: 'user-5', challengeId: 'challenge-0', imageId: 'submission-5', upvotes: 55, timestamp: '2023-10-26T14:00:00Z' },
-  { id: 'submission-6', userId: 'user-1', challengeId: 'challenge-0', imageId: 'submission-6', upvotes: 23, timestamp: '2023-10-26T15:00:00Z' },
+  { challengeId: 'challenge-0', userId: 'user-2', photoUrl: 'submission-2', upvoteCount: 35, submittedAt: new Date('2023-10-26T11:00:00Z').toISOString(), moderationStatus: 'approved'},
+  { challengeId: 'challenge-0', userId: 'user-3', photoUrl: 'submission-3', upvoteCount: 68, submittedAt: new Date('2023-10-26T12:00:00Z').toISOString(), moderationStatus: 'approved' },
+  { challengeId: 'challenge-0', userId: 'user-4', photoUrl: 'submission-4', upvoteCount: 12, submittedAt: new Date('2023-10-26T13:00:00Z').toISOString(), moderationStatus: 'approved' },
+  { challengeId: 'challenge-0', userId: 'user-5', photoUrl: 'submission-5', upvoteCount: 55, submittedAt: new Date('2023-10-26T14:00:00Z').toISOString(), moderationStatus: 'approved' },
+  { challengeId: 'challenge-0', userId: 'user-1', photoUrl: 'submission-6', upvoteCount: 23, submittedAt: new Date('2023-10-26T15:00:00Z').toISOString(), moderationStatus: 'approved' },
 ];
 
-export const winningSubmissions: Submission[] = [
-    { id: 'win-1', userId: 'user-1', challengeId: 'challenge-prev-1', imageId: 'win-1', upvotes: 150, timestamp: '2023-10-25T10:00:00Z' },
-    { id: 'win-2', userId: 'user-2', challengeId: 'challenge-prev-2', imageId: 'win-2', upvotes: 135, timestamp: '2023-10-24T11:00:00Z' },
-    { id: 'win-3', userId: 'user-3', challengeId: 'challenge-prev-3', imageId: 'win-3', upvotes: 188, timestamp: '2023-10-23T12:00:00Z' },
+export const winningSubmissions: Omit<Submission, 'id'|'createdAt'|'updatedAt'>[] = [
+    { challengeId: 'challenge-prev-1', userId: 'user-1', photoUrl: 'win-1', upvoteCount: 150, submittedAt: new Date('2023-10-25T10:00:00Z').toISOString(), moderationStatus: 'approved' },
+    { challengeId: 'challenge-prev-2', userId: 'user-2', photoUrl: 'win-2', upvoteCount: 135, submittedAt: new Date('2023-10-24T11:00:00Z').toISOString(), moderationStatus: 'approved' },
+    { challengeId: 'challenge-prev-3', userId: 'user-3', photoUrl: 'win-3', upvoteCount: 188, submittedAt: new Date('2023-10-23T12:00:00Z').toISOString(), moderationStatus: 'approved' },
 ]
 
 export const badges: Badge[] = [
-  { id: 'badge-1', title: '5-Day Streak', description: 'Submitted a photo 5 days in a row.', icon: Flame },
-  { id: 'badge-2', title: 'First Win', description: 'Achieved your first daily challenge win.', icon: Trophy },
-  { id: 'badge-3', title: 'Hot Streak', description: 'Submitted a photo 10 days in a row.', icon: Zap },
-  { id: 'badge-4', title: 'Voter', description: 'Voted on 50 photos.', icon: Star },
-  { id: 'badge-5', title: 'Dominator', description: 'Won 5 daily challenges.', icon: Award },
+  { id: 'badge-1', name: '5-Day Streak', description: 'Submitted a photo 5 days in a row.', icon: Flame, criteria: "Submit a photo 5 days in a row.", imageUrl: "" },
+  { id: 'badge-2', name: 'First Win', description: 'Achieved your first daily challenge win.', icon: Trophy, criteria: "Win a daily challenge.", imageUrl: "" },
+  { id: 'badge-3', name: 'Hot Streak', description: 'Submitted a photo 10 days in a row.', icon: Zap, criteria: "Submit a photo 10 days in a row.", imageUrl: "" },
+  { id: 'badge-4', name: 'Voter', description: 'Voted on 50 photos.', icon: Star, criteria: "Vote on 50 photos.", imageUrl: "" },
+  { id: 'badge-5', name: 'Dominator', description: 'Won 5 daily challenges.', icon: Award, criteria: "Win 5 daily challenges.", imageUrl: "" },
 ];
 
-export function findUserById(userId: string): User | undefined {
-    return users.find(user => user.id === userId);
-}
-
-export function findSubmissionById(submissionId: string): Submission | undefined {
-    return [...submissions, ...winningSubmissions].find(sub => sub.id === submissionId);
+export function findSubmissionById(submissionId: string) {
+    const allSubmissions = [
+        ...submissions.map((s, i) => ({...s, id: `submission-${i+1}`})),
+        ...winningSubmissions.map((s, i) => ({...s, id: `win-${i+1}`}))
+    ];
+    return allSubmissions.find(sub => sub.photoUrl === submissionId);
 }
