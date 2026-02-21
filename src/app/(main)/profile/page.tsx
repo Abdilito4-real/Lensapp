@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useRef, type ChangeEvent } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useFirebaseApp, updateDocumentNonBlocking } from '@/firebase';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,7 +21,6 @@ import { ImageCropper } from '@/components/image-cropper';
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const firebaseApp = useFirebaseApp();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +50,7 @@ export default function ProfilePage() {
     };
     
     const handleCropComplete = async (croppedImageSrc: string) => {
-        if (!user || !firebaseApp || !userProfileRef) return;
+        if (!user || !userProfileRef) return;
         
         setImageToCrop(null);
         setIsUploading(true);
@@ -62,12 +60,20 @@ export default function ProfilePage() {
             const response = await fetch(croppedImageSrc);
             const blob = await response.blob();
             
-            const storage = getStorage(firebaseApp);
-            const storageRef = ref(storage, `avatars/${user.uid}.png`);
-            
-            await uploadBytes(storageRef, blob);
-            
-            const downloadURL = await getDownloadURL(storageRef);
+            const formData = new FormData();
+            formData.append('file', blob, 'avatar.png');
+
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!uploadResponse.ok) {
+                const errorData = await uploadResponse.json();
+                throw new Error(errorData.error || 'Upload to Cloudinary failed');
+            }
+
+            const { url: downloadURL } = await uploadResponse.json();
             
             updateDocumentNonBlocking(userProfileRef, {
                 profileImageUrl: downloadURL,
