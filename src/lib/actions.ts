@@ -54,6 +54,7 @@ export async function moderatePhoto(
     };
   } catch (e) {
     console.error(e);
-    return { error: 'Failed to moderate photo. Please try again.' };
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { error: `Failed to moderate photo: ${errorMessage}` };
   }
 }

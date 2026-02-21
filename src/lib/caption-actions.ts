@@ -22,6 +22,6 @@ export async function suggestCaption(
   } catch (e) {
     console.error(e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
-    return { error: `Failed to suggest a caption: ${errorMessage}` };
+    return { error: errorMessage };
   }
 }
