@@ -36,7 +36,6 @@ const generateAvatarFlow = ai.defineFlow(
       prompt: `Generate a cute, cartoon-style avatar based on the prompt: '${prompt}'. The avatar should be a single character, suitable as a profile picture. Use a simple, flat illustration style with vibrant colors on a clean, solid-color background. The image must be square.`,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
-        aspectRatio: '1:1',
       }
     });
 
