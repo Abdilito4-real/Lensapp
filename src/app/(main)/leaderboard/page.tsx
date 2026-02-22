@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
-import { Flame, Heart } from 'lucide-react';
+import { Flame, Heart, LogIn } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LeaderboardPage() {
     const firestore = useFirestore();
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
 
     const topStreaksQuery = useMemoFirebase(() => 
         (firestore && user)
@@ -38,6 +38,16 @@ export default function LeaderboardPage() {
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
     const isLoading = streaksLoading || submissionsLoading;
+
+    if (!user && !isUserLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
+                 <LogIn className="w-16 h-16 text-muted-foreground" />
+                 <h2 className="text-2xl font-bold">Please Log In</h2>
+                 <p className="text-muted-foreground">Log in to view the leaderboards and see how you rank.</p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8">
