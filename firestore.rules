@@ -134,6 +134,11 @@ service cloud.firestore {
     // --------------------------------------------------------------------------
     // Collection Rules
     // --------------------------------------------------------------------------
+    
+    match /userProfiles {
+      // Allow any user to query the list of profiles for leaderboards and discovery.
+      allow list: if true;
+    }
 
     /**
      * @description Manages user profiles. Profiles are publicly readable to support
@@ -141,7 +146,9 @@ service cloud.firestore {
      * @path /userProfiles/{userId}
      */
     match /userProfiles/{userId} {
-      allow read: if true;
+      // Allow any user to get a specific profile.
+      allow get: if true;
+      // Only the owner can create, update, or delete their own profile.
       allow create: if isOwner(userId) && isValidNewProfile(userId);
       allow update: if isOwner(userId) && isProfileIdImmutable();
       allow delete: if isOwner(userId);
