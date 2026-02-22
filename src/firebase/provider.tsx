@@ -116,7 +116,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 setDocumentNonBlocking(userProfileRef, {
                   ...newUserProfile,
                   id: firebaseUser.uid,
-                }, {});
+                }, { merge: true });
               }
             }).catch(err => {
               console.error("Error checking for user profile:", err);

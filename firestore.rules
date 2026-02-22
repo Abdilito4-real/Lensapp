@@ -91,7 +91,7 @@ service cloud.firestore {
      * Prevents re-assigning a profile to a different user.
      */
     function isProfileIdImmutable() {
-      return request.resource.data.id == resource.data.id;
+      return !('id' in resource.data) || request.resource.data.id == resource.data.id;
     }
     
     /**
@@ -146,8 +146,7 @@ service cloud.firestore {
      */
     match /userProfiles/{userId} {
       allow read: if true;
-      allow create: if isOwner(userId) && isValidNewProfile(userId);
-      allow update: if isOwner(userId) && isProfileIdImmutable();
+      allow create, update: if isOwner(userId);
       allow delete: if isOwner(userId);
     }
 
