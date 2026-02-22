@@ -6,26 +6,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
-import { Flame, Heart } from 'lucide-react';
+import { Flame, Heart, LogIn } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LeaderboardPage() {
-    const { isUserLoading } = useUser();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
     const topStreaksQuery = useMemoFirebase(() => 
-        (firestore && !isUserLoading)
+        (firestore && user)
             ? query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)) 
             : null,
-        [firestore, isUserLoading]
+        [firestore, user]
     );
     const { data: topStreaks, isLoading: streaksLoading } = useCollection<UserProfile>(topStreaksQuery);
 
     const topSubmissionsQuery = useMemoFirebase(() => 
-        (firestore && !isUserLoading)
+        (firestore && user)
             ? query(
                 collectionGroup(firestore, 'submissions'), 
                 where('moderationStatus', '==', 'approved'),
@@ -33,15 +33,15 @@ export default function LeaderboardPage() {
                 limit(10)
               )
             : null,
-        [firestore, isUserLoading]
+        [firestore, user]
     );
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
     const userProfilesQuery = useMemoFirebase(() => 
-        (firestore && !isUserLoading)
+        (firestore && user)
             ? collection(firestore, 'userProfiles') 
             : null,
-        [firestore, isUserLoading]
+        [firestore, user]
     );
     const { data: userProfiles, isLoading: profilesLoading } = useCollection<UserProfile>(userProfilesQuery);
 
@@ -49,6 +49,36 @@ export default function LeaderboardPage() {
         if (!userProfiles) return new Map<string, UserProfile>();
         return new Map(userProfiles.map(p => [p.id, p]));
     }, [userProfiles]);
+
+    if (isUserLoading) {
+        return (
+             <div className="space-y-8">
+                <div className="text-center">
+                    <Skeleton className="h-10 w-1/2 mx-auto" />
+                    <Skeleton className="h-5 w-2/3 mx-auto mt-2" />
+                </div>
+                <Tabs defaultValue="streaks" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="streaks" disabled>Top Streaks</TabsTrigger>
+                        <TabsTrigger value="submissions" disabled>Top Submissions</TabsTrigger>
+                    </TabsList>
+                     <TabsContent value="streaks" className="mt-6">
+                        <Skeleton className="h-64 w-full" />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        )
+    }
+
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
+                 <LogIn className="w-16 h-16 text-muted-foreground" />
+                 <h2 className="text-2xl font-bold">Please Log In</h2>
+                 <p className="text-muted-foreground">Log in to view the leaderboards.</p>
+            </div>
+        )
+    }
 
     const isLoading = streaksLoading || submissionsLoading || profilesLoading;
 
