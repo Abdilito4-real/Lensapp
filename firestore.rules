@@ -141,7 +141,7 @@ service cloud.firestore {
      * @path /userProfiles/{userId}
      */
     match /userProfiles/{userId} {
-      allow read: if true;
+      allow get, list: if true;
       allow create: if isOwner(userId) && isValidNewProfile(userId);
       allow update: if isOwner(userId) && isProfileIdImmutable();
       allow delete: if isOwner(userId);
@@ -164,8 +164,9 @@ service cloud.firestore {
      *              and voting.
      */
     match /{path=**}/submissions/{submissionId} {
-      allow read: if resource.data.moderationStatus == 'approved' 
-                  || (isSignedIn() && request.auth.uid == resource.data.userId);
+      allow list: if resource.data.moderationStatus == 'approved';
+      allow get: if resource.data.moderationStatus == 'approved'
+                 || (isSignedIn() && request.auth.uid == resource.data.userId);
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isSubmissionDataImmutable();
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
