@@ -7,24 +7,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
 import { Flame, Heart } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LeaderboardPage() {
     const firestore = useFirestore();
+    const { user } = useUser();
 
     const topStreaksQuery = useMemoFirebase(() => 
-        firestore 
+        (firestore && user)
             ? query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)) 
             : null,
-        [firestore]
+        [firestore, user]
     );
     const { data: topStreaks, isLoading: streaksLoading } = useCollection<UserProfile>(topStreaksQuery);
 
     const topSubmissionsQuery = useMemoFirebase(() => 
-        firestore 
+        (firestore && user)
             ? query(
                 collectionGroup(firestore, 'submissions'), 
                 where('moderationStatus', '==', 'approved'),
@@ -32,7 +33,7 @@ export default function LeaderboardPage() {
                 limit(10)
               )
             : null,
-        [firestore]
+        [firestore, user]
     );
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 

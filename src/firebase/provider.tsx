@@ -110,12 +110,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                   totalSubmissions: 0,
                   totalUpvotesReceived: 0,
                   totalWins: 0,
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp(),
                 };
                 setDocumentNonBlocking(userProfileRef, {
                   ...newUserProfile,
                   id: firebaseUser.uid,
-                  createdAt: serverTimestamp(),
-                  updatedAt: serverTimestamp(),
                 }, {});
               }
             }).catch(err => {
