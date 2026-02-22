@@ -141,7 +141,7 @@ service cloud.firestore {
      * @path /userProfiles/{userId}
      */
     match /userProfiles/{userId} {
-      allow get, list: if true;
+      allow read: if true;
       allow create: if isOwner(userId) && isValidNewProfile(userId);
       allow update: if isOwner(userId) && isProfileIdImmutable();
       allow delete: if isOwner(userId);
