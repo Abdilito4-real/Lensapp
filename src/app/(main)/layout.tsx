@@ -1,7 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { DesktopNav } from "@/components/desktop-nav";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { FirebaseClientProvider } from "@/firebase";
 
 export default function MainLayout({
   children,
