@@ -84,6 +84,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       (firebaseUser) => { // Auth state determined
         if (firebaseUser) {
             const userProfileRef = doc(firestore, 'userProfiles', firebaseUser.uid);
+            // This operation should only run for authenticated users.
             getDoc(userProfileRef).then(userProfileSnap => {
               if (!userProfileSnap.exists()) {
                 const getDisplayName = () => {
@@ -105,12 +106,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                   totalUpvotesReceived: 0,
                   totalWins: 0,
                 };
-                setDocumentNonBlocking(userProfileRef, {
-                  ...newUserProfile,
-                  id: firebaseUser.uid,
-                  createdAt: serverTimestamp(),
-                  updatedAt: serverTimestamp(),
-                }, {});
+                // Ensure profile creation only happens when user is definitively logged in.
+                if (auth.currentUser) {
+                    setDocumentNonBlocking(userProfileRef, {
+                    ...newUserProfile,
+                    id: firebaseUser.uid,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    }, {});
+                }
               }
             }).catch(err => {
               console.error("Error checking for user profile:", err);
