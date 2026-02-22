@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking } from '@/firebase';
 import type { UserProfile } from '@/lib/definitions';
 import { Loader2 } from 'lucide-react';
 
@@ -245,5 +245,3 @@ export function EmailAuthDialog({ onOpenChange }: EmailAuthDialogProps) {
     </DialogContent>
   );
 }
-
-    
