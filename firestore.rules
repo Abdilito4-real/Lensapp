@@ -164,7 +164,7 @@ service cloud.firestore {
      *              and voting.
      */
     match /{path=**}/submissions/{submissionId} {
-      allow list: if resource.data.moderationStatus == 'approved';
+      allow list: if request.query.where('moderationStatus', '==', 'approved');
       allow get: if resource.data.moderationStatus == 'approved'
                  || (isSignedIn() && request.auth.uid == resource.data.userId);
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
