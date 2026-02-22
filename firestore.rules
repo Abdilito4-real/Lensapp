@@ -137,11 +137,15 @@ service cloud.firestore {
     /**
      * @description Manages user profiles. Profiles are private and can only be
      *              read or written by their owner. Listing the entire collection
-     *              is disallowed.
+     *              is disallowed to prevent user enumeration.
      * @path /userProfiles/{userId}
      */
     match /userProfiles/{userId} {
-      allow read, write: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow update: if isOwner(userId) && isProfileIdImmutable();
+      // Creation is handled by backend logic on first sign-in.
+      // List and delete are explicitly disallowed for security.
+      allow list, create, delete: if false;
     }
 
     /**

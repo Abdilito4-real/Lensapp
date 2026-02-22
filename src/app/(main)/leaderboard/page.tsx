@@ -29,11 +29,6 @@ export default function LeaderboardPage() {
     );
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
-    // Note: The userProfiles query has been removed to comply with security rules.
-    // The topStreaks leaderboard is no longer feasible. We now only fetch profiles
-    // on demand or if they are linked to the top submissions.
-    // For this simplified version, we won't fetch submitter profiles.
-
     const isLoading = submissionsLoading || isUserLoading;
 
     return (
