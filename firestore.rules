@@ -10,7 +10,7 @@ service cloud.firestore {
      * and badges.
      *
      * Data Structure: Data is organized into several top-level collections.
-     *   - /userProfiles: Publicly readable user information.
+     *   - /userProfiles: User information, restricted to owner-only access.
      *   - /challenges: Publicly readable daily challenges, with nested /submissions.
      *   - /badges: Publicly readable achievement definitions.
      *   - /users: A private, user-scoped collection where each user's private data
@@ -25,8 +25,7 @@ service cloud.firestore {
      *     document in the `/roles_admin/{userId}` collection. This avoids custom
      *     claims and provides a clear, auditable trail for admin access (DBAC).
      *   - Public vs. Private Reads: Global content like challenges and badges is
-     *     publicly readable. User profiles are also public-read to allow for leaderboards
-     *     and social features. A user's specific votes and earned badges are private.
+     *     publicly readable. A user's profile, specific votes, and earned badges are private.
      *   - Segregated Writes: Writes to global content are restricted to admins.
      *     Writes to user-specific data are restricted to the data owner.
      *
@@ -134,24 +133,15 @@ service cloud.firestore {
     // --------------------------------------------------------------------------
     // Collection Rules
     // --------------------------------------------------------------------------
-    
-    match /userProfiles {
-      // Allow any user to query the list of profiles for leaderboards and discovery.
-      allow list: if true;
-    }
 
     /**
-     * @description Manages user profiles. Profiles are publicly readable to support
-     *              features like leaderboards. A user can create/update their own.
+     * @description Manages user profiles. Profiles are private and can only be
+     *              read or written by their owner. Listing the entire collection
+     *              is disallowed.
      * @path /userProfiles/{userId}
      */
     match /userProfiles/{userId} {
-      // Allow any user to get a specific profile.
-      allow get: if true;
-      // Only the owner can create, update, or delete their own profile.
-      allow create: if isOwner(userId) && isValidNewProfile(userId);
-      allow update: if isOwner(userId) && isProfileIdImmutable();
-      allow delete: if isOwner(userId);
+      allow read, write: if isOwner(userId);
     }
 
     /**
