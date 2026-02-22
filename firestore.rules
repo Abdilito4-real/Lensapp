@@ -140,7 +140,7 @@ service cloud.firestore {
      * @path /userProfiles/{userId}
      */
     match /userProfiles/{userId} {
-      allow read: if true;
+      allow get, list: if true;
       allow update: if isOwner(userId) && isProfileIdImmutable();
       // Creation is handled by backend logic on first sign-in.
       // Delete is explicitly disallowed for security.
@@ -164,7 +164,6 @@ service cloud.firestore {
      *              and voting.
      */
     match /{path=**}/submissions/{submissionId} {
-      allow list: if request.query.where('moderationStatus', '==', 'approved');
       allow get: if resource.data.moderationStatus == 'approved'
                  || (isSignedIn() && request.auth.uid == resource.data.userId);
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
