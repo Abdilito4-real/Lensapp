@@ -145,8 +145,7 @@ service cloud.firestore {
      * @principle A user is the authority for their own profile data (Self-Creation).
      */
     match /userProfiles/{userId} {
-      allow get: if true;
-      allow list: if true;
+      allow read: if true;
       allow create: if isOwner(userId) && isValidNewProfile(userId);
       allow update: if isOwner(userId) && isProfileIdImmutable();
       allow delete: if isOwner(userId);
@@ -163,7 +162,7 @@ service cloud.firestore {
      *              writes to privileged administrators.
      */
     match /challenges/{challengeId} {
-      allow get, list: if true;
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
     
@@ -197,7 +196,7 @@ service cloud.firestore {
      *              writes to privileged administrators.
      */
     match /badges/{badgeId} {
-      allow get, list: if true;
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
     

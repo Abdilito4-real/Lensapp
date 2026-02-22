@@ -36,18 +36,7 @@ export default function LeaderboardPage() {
     );
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
-    const userProfilesQuery = useMemoFirebase(() => 
-        firestore ? collection(firestore, 'userProfiles') : null,
-        [firestore]
-    );
-    const { data: userProfiles, isLoading: profilesLoading } = useCollection<UserProfile>(userProfilesQuery);
-
-    const userProfilesMap = useMemo(() => {
-        if (!userProfiles) return new Map<string, UserProfile>();
-        return new Map(userProfiles.map(p => [p.id, p]));
-    }, [userProfiles]);
-
-    const isLoading = streaksLoading || submissionsLoading || profilesLoading;
+    const isLoading = streaksLoading || submissionsLoading;
 
     return (
         <div className="space-y-8">
@@ -121,7 +110,6 @@ export default function LeaderboardPage() {
                              ))
                         ) : topSubmissions && topSubmissions.length > 0 ? (
                             topSubmissions.map((submission, index) => {
-                                const user = userProfilesMap.get(submission.userId);
                                 return (
                                     <Card key={submission.id} className="overflow-hidden group">
                                         <CardContent className="p-0 relative">
@@ -131,13 +119,10 @@ export default function LeaderboardPage() {
                                             </div>
                                             <div className="p-4 flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
-                                                    {user &&
-                                                        <Avatar className="h-8 w-8">
-                                                            <AvatarImage src={user.profileImageUrl} alt={user.displayName} />
-                                                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                                        </Avatar>
-                                                    }
-                                                    <span className="text-sm font-medium">{user?.displayName || 'Anonymous'}</span>
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarFallback>U</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-sm font-medium">User</span>
                                                 </div>
                                                 <Badge variant="outline" className="gap-1.5">
                                                     <Heart className="h-3.5 w-3.5 text-accent fill-current" />
