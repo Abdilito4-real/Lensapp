@@ -140,14 +140,11 @@ service cloud.firestore {
      *              profile. Profiles are publicly readable to support features like
      *              leaderboards and viewing other users' stats.
      * @path /userProfiles/{userId}
-     * @allow (create) An authenticated user creating their own profile document.
-     * @deny (create) A user trying to create a profile for another user's ID.
      * @principle A user is the authority for their own profile data (Self-Creation).
      */
     match /userProfiles/{userId} {
       allow read: if true;
-      allow create, update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     /**
