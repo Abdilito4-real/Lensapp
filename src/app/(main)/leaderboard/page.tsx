@@ -7,8 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
 import { Flame, Heart, LogIn } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, orderBy, limit, collectionGroup, where, doc } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -127,30 +127,9 @@ export default function LeaderboardPage() {
                                 </Card>
                              ))
                         ) : topSubmissions && topSubmissions.length > 0 ? (
-                            topSubmissions.map((submission, index) => {
-                                return (
-                                    <Card key={submission.id} className="overflow-hidden group">
-                                        <CardContent className="p-0 relative">
-                                            <div className="absolute top-2 left-2 z-10 bg-black/50 text-white h-8 w-8 rounded-full flex items-center justify-center font-bold text-lg">{index + 1}</div>
-                                            <div className="relative aspect-[4/3]">
-                                                <Image src={submission.photoUrl} alt="Top submission" fill sizes="(max-width: 640px) 90vw, 45vw" className="object-cover" />
-                                            </div>
-                                            <div className="p-4 flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarFallback>U</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="text-sm font-medium">User</span>
-                                                </div>
-                                                <Badge variant="outline" className="gap-1.5">
-                                                    <Heart className="h-3.5 w-3.5 text-accent fill-current" />
-                                                    {submission.upvoteCount}
-                                                </Badge>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )
-                            })
+                            topSubmissions.map((submission, index) => (
+                                <SubmissionItem key={submission.id} submission={submission} index={index} />
+                            ))
                         ) : (
                             <div className="col-span-1 sm:col-span-2 text-center py-8">
                                 <p className="text-muted-foreground">No submissions have been upvoted yet.</p>
@@ -160,5 +139,38 @@ export default function LeaderboardPage() {
                 </TabsContent>
             </Tabs>
         </div>
+    );
+}
+
+function SubmissionItem({ submission, index }: { submission: Submission, index: number }) {
+    const firestore = useFirestore();
+    const profileQuery = useMemoFirebase(() =>
+        (firestore && submission.userId) ? doc(firestore, 'userProfiles', submission.userId) : null,
+        [firestore, submission.userId]
+    );
+    const { data: profile, isLoading } = useDoc<UserProfile>(profileQuery);
+
+    return (
+        <Card className="overflow-hidden group">
+            <CardContent className="p-0 relative">
+                <div className="absolute top-2 left-2 z-10 bg-black/50 text-white h-8 w-8 rounded-full flex items-center justify-center font-bold text-lg">{index + 1}</div>
+                <div className="relative aspect-[4/3]">
+                    <Image src={submission.photoUrl} alt="Top submission" fill sizes="(max-width: 640px) 90vw, 45vw" className="object-cover" />
+                </div>
+                <div className="p-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={profile?.profileImageUrl} alt={profile?.displayName} />
+                            <AvatarFallback>{profile?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">{profile?.displayName || (isLoading ? '...' : 'User')}</span>
+                    </div>
+                    <Badge variant="outline" className="gap-1.5">
+                        <Heart className="h-3.5 w-3.5 text-accent fill-current" />
+                        {submission.upvoteCount}
+                    </Badge>
+                </div>
+            </CardContent>
+        </Card>
     );
 }

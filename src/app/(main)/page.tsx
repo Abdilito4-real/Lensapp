@@ -84,19 +84,19 @@ export default function HomePage() {
 
         return (
             <div className="space-y-16 py-8 md:py-12">
-                <section className="relative min-h-[600px] flex flex-col items-center justify-center py-12 px-4 overflow-visible">
-                    <div className="relative z-20 text-center space-y-4 mb-16">
-                         <h1 className="text-white text-5xl md:text-8xl font-extrabold tracking-tighter animate-in fade-in slide-in-from-top-8 duration-1000">
+                <section className="relative min-h-[500px] flex flex-col items-center justify-center py-8 px-4 overflow-visible">
+                    <div className="relative z-20 text-center space-y-4 mb-8 md:mb-12">
+                         <h1 className="text-white text-3xl md:text-6xl font-extrabold tracking-tighter animate-in fade-in slide-in-from-top-8 duration-1000">
                             Today's Challenge
                         </h1>
-                        <p className="text-[#d9e5c5]/80 text-lg md:text-2xl max-w-2xl mx-auto font-medium animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
+                        <p className="text-[#d9e5c5]/80 text-sm md:text-xl max-w-2xl mx-auto font-medium animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 px-4">
                             A new photo challenge every day. Submit your best shot.
                         </p>
                     </div>
 
-                    <div className="relative w-full max-w-4xl mx-auto h-[450px]">
+                    <div className="relative w-full max-w-4xl mx-auto h-[350px] md:h-[400px]">
                          {/* Overlapping Images (Background Layer) */}
-                         <div className="absolute top-0 -left-4 md:-left-20 w-48 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform -rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0">
+                         <div className="absolute top-0 -left-4 md:-left-20 w-48 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform -rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0 hidden md:block">
                              <Image
                                 src={galleryImages[0]?.imageUrl || PlaceHolderImages[0].imageUrl}
                                 alt="Challenge Sample 1"
@@ -106,7 +106,7 @@ export default function HomePage() {
                              />
                          </div>
 
-                         <div className="absolute top-12 -right-4 md:-right-20 w-56 md:w-72 h-72 md:h-96 rounded-2xl overflow-hidden shadow-2xl transform rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0">
+                         <div className="absolute top-12 -right-4 md:-right-20 w-56 md:w-72 h-72 md:h-96 rounded-2xl overflow-hidden shadow-2xl transform rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0 hidden md:block">
                              <Image
                                 src={galleryImages[1]?.imageUrl || PlaceHolderImages[1].imageUrl}
                                 alt="Challenge Sample 2"
@@ -118,15 +118,15 @@ export default function HomePage() {
 
                          {/* The Challenge Card (Middle Layer) */}
                          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                             <div className="bg-[#3d4a30] border border-white/10 rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-center space-y-8 pointer-events-auto transform transition-transform hover:scale-[1.02] duration-300">
-                                 <div className="space-y-3">
-                                     <h3 className="text-[#d9e5c5] text-3xl md:text-4xl font-bold">The Study Grind</h3>
-                                     <p className="text-[#d9e5c5]/70 text-base md:text-lg leading-relaxed">Show us your study session setup. Late nights, coffee, and books!</p>
+                             <div className="bg-[#3d4a30] border border-white/10 rounded-[2.5rem] p-6 md:p-8 max-w-lg w-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-center space-y-6 pointer-events-auto transform transition-transform hover:scale-[1.02] duration-300">
+                                 <div className="space-y-2">
+                                     <h3 className="text-[#d9e5c5] text-2xl md:text-3xl font-bold">The Study Grind</h3>
+                                     <p className="text-[#d9e5c5]/70 text-sm md:text-base leading-relaxed">Show us your study session setup. Late nights, coffee, and books!</p>
                                  </div>
 
-                                 <div className="space-y-3">
+                                 <div className="space-y-2">
                                      <p className="text-[#d9e5c5]/40 text-xs md:text-sm uppercase tracking-[0.2em] font-semibold">Challenge ends in:</p>
-                                     <div className="text-[#d9e5c5] text-4xl md:text-6xl font-mono font-bold flex justify-center items-center gap-3 md:gap-4">
+                                     <div className="text-[#d9e5c5] text-3xl md:text-5xl font-mono font-bold flex justify-center items-center gap-3 md:gap-4">
                                          <span className="bg-black/20 px-2 py-1 rounded-lg">00</span>
                                          <span className="opacity-50">:</span>
                                          <span className="bg-black/20 px-2 py-1 rounded-lg">00</span>
@@ -135,7 +135,7 @@ export default function HomePage() {
                                      </div>
                                  </div>
 
-                                 <Button asChild className="w-full bg-[#d9e5c5] text-[#3d4a30] hover:bg-white hover:scale-105 rounded-2xl py-8 text-xl font-bold shadow-lg transition-all">
+                                 <Button asChild className="w-full bg-[#d9e5c5] text-[#3d4a30] hover:bg-white hover:scale-105 rounded-2xl py-6 text-lg font-bold shadow-lg transition-all">
                                      <Link href="/login?redirectTo=/submit" className="flex items-center justify-center gap-3">
                                          Submit Your Photo <Send className="w-6 h-6" />
                                      </Link>
@@ -144,7 +144,7 @@ export default function HomePage() {
                          </div>
 
                          {/* Overlapping Images (Foreground Layer) */}
-                         <div className="absolute -bottom-12 left-4 md:left-0 w-52 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30]">
+                         <div className="absolute -bottom-12 left-4 md:left-0 w-52 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30] hidden md:block">
                              <Image
                                 src={galleryImages[2]?.imageUrl || PlaceHolderImages[2].imageUrl}
                                 alt="Challenge Sample 3"
@@ -154,7 +154,7 @@ export default function HomePage() {
                              />
                          </div>
 
-                         <div className="absolute -bottom-6 right-4 md:right-8 w-48 md:w-60 h-64 md:h-72 rounded-2xl overflow-hidden shadow-2xl transform -rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30]">
+                         <div className="absolute -bottom-6 right-4 md:right-8 w-48 md:w-60 h-64 md:h-72 rounded-2xl overflow-hidden shadow-2xl transform -rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30] hidden md:block">
                              <Image
                                 src={galleryImages[3]?.imageUrl || PlaceHolderImages[3].imageUrl}
                                 alt="Challenge Sample 4"
@@ -166,28 +166,6 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                <section className="space-y-8">
-                    <div className="text-center space-y-2">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Featured Gallery</h2>
-                        <p className="text-muted-foreground">See what our community is capturing on campus.</p>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {galleryImages.map((image) => (
-                            <div key={image.id} className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted shadow-md hover:shadow-xl transition-all">
-                                <Image
-                                    src={image.imageUrl}
-                                    alt={image.description}
-                                    fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                    sizes="(max-width: 768px) 50vw, 25vw"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                                    <p className="text-white text-sm font-medium">{image.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <Card className="bg-card/50 backdrop-blur-sm">
