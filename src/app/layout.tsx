@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
   title: 'Lens - Daily Photo Challenge',
-  description: 'Join daily photo challenges, vote on submissions, and climb the leaderboard.',
+  description: 'Join daily photo challenges, vote on submissions, and keep your streak alive.',
   icons: {
     shortcut: '/logo.png',
     apple: '/logo.png',

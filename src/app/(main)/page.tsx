@@ -178,8 +178,8 @@ export default function HomePage() {
                     <Card className="bg-card/50 backdrop-blur-sm">
                         <CardHeader>
                             <Trophy className="w-12 h-12 text-primary mb-2" />
-                            <CardTitle>Global Leaderboards</CardTitle>
-                            <CardDescription>See how your photography stacks up against the best in the community.</CardDescription>
+                            <CardTitle>Vote & Streaks</CardTitle>
+                            <CardDescription>Vote on the best daily photos and support users with the longest streaks.</CardDescription>
                         </CardHeader>
                     </Card>
                     <Card className="bg-card/50 backdrop-blur-sm">

@@ -23,6 +23,10 @@ import {
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useFirebase, useUser, useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { uploadFile } from '@/lib/storage-utils';
+import { moderatePhoto } from '@/lib/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -224,7 +228,7 @@ const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<F
 };
 
 
-export function SubmitFlow({ challengeTopic, challengeDescription }: { challengeTopic: string; challengeDescription: string; }) {
+export function SubmitFlow({ challengeTopic, challengeDescription, challengeId = 'daily' }: { challengeTopic: string; challengeDescription: string; challengeId?: string; }) {
   const [stage, setStage] = useState<Stage>('select');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -233,6 +237,10 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useUser();
+  const { storage } = useFirebase();
+  const firestore = useFirestore();
+
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
   const isMountedRef = useRef(true);
@@ -410,10 +418,18 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
   };
   
   const handleFinalSubmission = async () => {
+    if (!user) {
+        toast({ title: 'Authentication Required', description: 'Please log in to submit your photo.', variant: 'destructive' });
+        return;
+    }
+
     if (!imagePreview || !imageContainerRef.current) {
         toast({ title: 'Error', description: 'No image to submit.', variant: 'destructive' });
         return;
     }
+
+    setIsCaptionLoading(true);
+    toast({ title: 'Processing...', description: 'Applying edits and preparing your submission.' });
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -480,11 +496,54 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
         ctx.fillText(text.content, textX, textY);
     });
 
-    toast({
-      title: 'Submission Successful!',
-      description: 'Your photo has been entered into the challenge.'
-    });
-    router.push('/');
+    try {
+        const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.9);
+        });
+
+        // 1. Upload to Storage
+        const fileName = `${Date.now()}-${user.uid}.jpg`;
+        const storagePath = `submissions/${user.uid}/${fileName}`;
+        const downloadUrl = await uploadFile(storage, storagePath, blob);
+
+        // 2. AI Moderation
+        const formData = new FormData();
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        formData.append('photo', file);
+        formData.append('topic', challengeTopic);
+
+        const moderationResult = await moderatePhoto({}, formData);
+
+        // 3. Save to Firestore
+        await addDoc(collection(firestore, `challenges/${challengeId}/submissions`), {
+            userId: user.uid,
+            challengeId: challengeId,
+            photoUrl: downloadUrl,
+            submittedAt: new Date().toISOString(),
+            upvoteCount: 0,
+            moderationStatus: moderationResult.alignsWithTopic ? 'approved' : 'pending',
+            aiAnalysisResult: moderationResult.reason || 'No AI analysis available.',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        });
+
+        toast({
+            title: moderationResult.alignsWithTopic ? 'Submission Successful!' : 'Pending Review',
+            description: moderationResult.alignsWithTopic
+                ? 'Your photo matches the topic and is now live!'
+                : 'Your photo is being reviewed for topic alignment.',
+        });
+        router.push('/vote');
+    } catch (error: any) {
+        console.error('Submission error:', error);
+        toast({
+            title: 'Submission Failed',
+            description: error.message || 'Something went wrong while saving your photo.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsCaptionLoading(false);
+    }
   }
 
   const handleResetFilters = () => {

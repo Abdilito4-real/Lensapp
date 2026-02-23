@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +20,12 @@ import Link from 'next/link';
 
 export function AuthButton() {
   const { user, isUserLoading } = useUser();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const auth = useAuth();
   const firestore = useFirestore();
 
@@ -29,7 +36,7 @@ export function AuthButton() {
     signOut(auth);
   }
 
-  if (isUserLoading || (user && isProfileLoading)) {
+  if (!mounted || isUserLoading || (user && isProfileLoading)) {
       return <Button variant="outline" size="sm">Loading...</Button>;
   }
 

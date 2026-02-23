@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, type ChangeEvent } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection } from '@/firebase';
+import { doc, serverTimestamp, query, collectionGroup, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import type { UserProfile, Submission } from '@/lib/definitions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -12,7 +13,6 @@ import { badges, findSubmissionById } from '@/lib/data';
 import { Flame, Heart, Trophy, LogIn, Camera, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { UserProfile } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -31,8 +31,18 @@ export default function ProfilePage() {
     const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [user, firestore]);
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-    // TODO: Replace with firestore data
-    const userWins = (userProfile && userProfile.totalWins > 0) ? (findSubmissionById('win-1') ? [findSubmissionById('win-1')] : []) : [];
+    const userSubmissionsQuery = useMemoFirebase(() =>
+        (firestore && user)
+            ? query(
+                collectionGroup(firestore, 'submissions'),
+                where('userId', '==', user.uid),
+                where('moderationStatus', '==', 'approved'),
+                orderBy('submittedAt', 'desc')
+              )
+            : null,
+        [firestore, user]
+    );
+    const { data: userSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(userSubmissionsQuery);
     
     const handleAvatarClick = () => {
         if (isUploading) return;
@@ -226,26 +236,35 @@ export default function ProfilePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Hall of Fame</CardTitle>
-                        <CardDescription>Your winning submissions.</CardDescription>
+                        <CardDescription>Your approved submissions.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {userWins.length > 0 ? (
+                        {submissionsLoading ? (
+                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <Skeleton className="aspect-square rounded-lg" />
+                                <Skeleton className="aspect-square rounded-lg" />
+                             </div>
+                        ) : userSubmissions && userSubmissions.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {userWins.map(win => {
-                                    const image = win ? PlaceHolderImages.find(p => p.id === win.photoUrl) : undefined;
-                                    if (!image || !win) return null;
+                                {userSubmissions.map(submission => {
                                     return (
-                                        <div key={win.id} className="rounded-lg overflow-hidden relative group aspect-square">
-                                            <Image src={image.imageUrl} alt="Winning submission" fill sizes="(max-width: 768px) 45vw, (max-width: 1024px) 30vw, 22vw" className="object-cover" data-ai-hint={image.imageHint} />
+                                        <div key={submission.id} className="rounded-lg overflow-hidden relative group aspect-square bg-muted">
+                                            <Image
+                                                src={submission.photoUrl}
+                                                alt="User submission"
+                                                fill
+                                                sizes="(max-width: 768px) 45vw, (max-width: 1024px) 30vw, 22vw"
+                                                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                                            />
                                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                                                <p className="text-white text-center text-xs">+{win.upvoteCount} votes</p>
+                                                <p className="text-white text-center text-sm font-bold">+{submission.upvoteCount} votes</p>
                                             </div>
                                         </div>
                                     )
                                 })}
                             </div>
                         ) : (
-                            <p className="text-muted-foreground text-center py-8">No wins yet. Keep participating!</p>
+                            <p className="text-muted-foreground text-center py-8">No approved submissions yet. Keep participating!</p>
                         )}
                     </CardContent>
                 </Card>

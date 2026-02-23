@@ -11,23 +11,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/site.webmanifest',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET,OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'X-Requested-With, content-type, Authorization',
-          },
-        ],
-      },
-      {
         source: '/sw.js',
         headers: [
           {
@@ -39,6 +22,24 @@ const nextConfig: NextConfig = {
             value: '/',
           },
         ],
+      },
+      {
+        source: '/site.webmanifest',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/leaderboard',
+        destination: '/vote',
+        permanent: true,
       },
     ];
   },

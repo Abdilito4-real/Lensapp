@@ -9,6 +9,7 @@ export function LensLoader({ className }: { className?: string }) {
       width={20}
       height={20}
       className={cn('animate-spin', className)}
+      priority
     />
   );
 }

@@ -51,7 +51,7 @@ export async function generateStudyTools(
       timestamp: Date.now(), // to force re-render
     };
   } catch (e) {
-    console.error(e);
+    console.error('Error in generateStudyTools server action:', e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
     return { error: `AI Error: ${errorMessage}. Please try again.` };
   }

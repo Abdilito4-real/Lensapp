@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -7,13 +8,21 @@ import { useUser } from '@/firebase';
 
 const navItems = [
   { href: '/', label: 'Home' },
-  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/vote', label: 'Vote' },
 ];
 
 export function MainNav() {
   const pathname = usePathname();
   const { user } = useUser();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isAuthenticated = !!user;
+
+  if (!mounted) return null;
 
   return (
     <nav className="hidden md:flex items-center gap-6 text-sm">

@@ -35,7 +35,11 @@ export default function SubmitPage() {
 
   return (
     <div className="flex justify-center">
-       <SubmitFlow challengeTopic={currentChallenge.title} challengeDescription={currentChallenge.description} />
+       <SubmitFlow
+        challengeId={currentChallenge.id}
+        challengeTopic={currentChallenge.title}
+        challengeDescription={currentChallenge.description}
+       />
     </div>
   );
 }

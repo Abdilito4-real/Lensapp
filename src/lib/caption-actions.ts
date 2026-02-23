@@ -20,7 +20,7 @@ export async function suggestCaption(
     });
     return { caption: result.caption };
   } catch (e) {
-    console.error(e);
+    console.error('Error in suggestCaption server action:', e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
     return { error: errorMessage };
   }

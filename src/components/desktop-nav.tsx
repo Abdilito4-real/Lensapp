@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Trophy, User, BookOpen, Users, Camera } from 'lucide-react';
@@ -16,14 +17,22 @@ const navItems = [
   { href: '/', label: 'Home', icon: Users },
   { href: '/snap-notes', label: 'Study', icon: BookOpen },
   { href: '/submit', label: 'Submit', icon: Camera },
-  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/vote', label: 'Vote & Streaks', icon: Trophy },
   { href: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];
 
 export function DesktopNav() {
   const pathname = usePathname();
   const { user } = useUser();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isAuthenticated = !!user;
+
+  if (!mounted) return null;
 
   return (
     <aside className="hidden md:flex fixed right-4 top-1/2 -translate-y-1/2 z-50">
