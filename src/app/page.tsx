@@ -4,10 +4,13 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import Link from 'next/link';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function WelcomePage() {
     const router = useRouter();
     const { user, isUserLoading } = useUser();
+
+    const logoImage = PlaceHolderImages.find(p => p.id === 'app-logo');
 
     const handleEnterApp = () => {
         if (user) {
@@ -25,13 +28,25 @@ export default function WelcomePage() {
         }
     };
 
+    if (!logoImage) {
+        return null;
+    }
+
     return (
         <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
                 <div className="container flex h-20 items-center justify-between">
                     <div className="flex items-center gap-6">
                         <Link href="/" className="flex items-center gap-3">
-                            <Image src="/logo.png" alt="Lens logo" width={48} height={48} className="w-12 h-12" priority />
+                            <Image 
+                                src={logoImage.imageUrl} 
+                                alt="Lens logo" 
+                                width={48} 
+                                height={48} 
+                                className="w-12 h-12 rounded-lg object-cover" 
+                                priority 
+                                data-ai-hint={logoImage.imageHint}
+                            />
                             <span className="font-bold text-xl">Lens</span>
                         </Link>
                     </div>
@@ -44,7 +59,13 @@ export default function WelcomePage() {
             </header>
             <main className="flex-1 flex flex-col items-center justify-center text-center p-4">
                 <div className="relative w-48 h-48 mb-8">
-                    <Image src="/logo.png" alt="Lens logo" layout="fill" objectFit="contain" />
+                    <Image 
+                        src={logoImage.imageUrl} 
+                        alt="Lens logo" 
+                        layout="fill" 
+                        objectFit="contain"
+                        data-ai-hint={logoImage.imageHint}
+                    />
                 </div>
                 <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4">
                     Welcome to Lens
