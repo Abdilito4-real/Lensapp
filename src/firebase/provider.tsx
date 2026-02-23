@@ -2,7 +2,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { Firestore, doc, getDoc, serverTimestamp, type FieldValue } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { setDocumentNonBlocking } from './non-blocking-updates';
@@ -80,7 +80,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => { // Auth state determined
+      async (firebaseUser) => { // Auth state determined
         if (firebaseUser) {
           try {
             const userProfileRef = doc(firestore, 'userProfiles', firebaseUser.uid);
@@ -97,7 +97,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 return `User-${firebaseUser.uid.substring(0, 5)}`;
               };
 
-                const newUserProfile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: FieldValue, updatedAt: FieldValue } = {
+              const newUserProfile = {
                   displayName: getDisplayName(),
                   profileImageUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
                   currentStreak: 0,
@@ -105,17 +105,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                   totalSubmissions: 0,
                   totalUpvotesReceived: 0,
                   totalWins: 0,
-                };
-                setDocumentNonBlocking(userProfileRef, {
-                  ...newUserProfile,
-                  id: firebaseUser.uid,
-                  createdAt: serverTimestamp(),
-                  updatedAt: serverTimestamp(),
-                }, {});
-              }
-            }).catch(err => {
+              };
+              
+              setDocumentNonBlocking(userProfileRef, {
+                ...newUserProfile,
+                id: firebaseUser.uid,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              }, {});
+            }
+          } catch(err) {
               console.error("Error checking for user profile:", err);
-            });
+          };
         }
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
       },

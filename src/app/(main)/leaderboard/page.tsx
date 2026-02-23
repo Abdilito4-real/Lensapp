@@ -6,11 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
-<<<<<<< HEAD
-import { Heart, LogIn } from 'lucide-react';
-=======
 import { Flame, Heart, LogIn } from 'lucide-react';
->>>>>>> origin/main
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
@@ -19,13 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function LeaderboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const { user, isUserLoading } = useUser();
 
-<<<<<<< HEAD
-    // Query is now dependent on the user object
-    const topSubmissionsQuery = useMemoFirebase(() =>
-        (firestore && user) // <-- FIX: Only create query if user is logged in
-=======
     const topStreaksQuery = useMemoFirebase(() => 
         (firestore && user)
             ? query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)) 
@@ -36,7 +26,6 @@ export default function LeaderboardPage() {
 
     const topSubmissionsQuery = useMemoFirebase(() => 
         (firestore && user)
->>>>>>> origin/main
             ? query(
                 collectionGroup(firestore, 'submissions'),
                 where('moderationStatus', '==', 'approved'),
@@ -44,36 +33,12 @@ export default function LeaderboardPage() {
                 limit(10)
             )
             : null,
-<<<<<<< HEAD
-        [firestore, user] // Dependency array includes user
-=======
         [firestore, user]
->>>>>>> origin/main
     );
 
-    // The hook will now receive null if the user is not logged in, preventing the query
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
-<<<<<<< HEAD
-    const isLoading = isUserLoading || (user && submissionsLoading);
-
-    // 1. Loading State: Show skeletons while checking auth or fetching data
-    if (isLoading) {
-        return (
-            <div className="space-y-8">
-                <div className="text-center">
-                    <Skeleton className="h-10 w-1/2 mx-auto" />
-                    <Skeleton className="h-5 w-2/3 mx-auto mt-2" />
-                </div>
-                <Tabs defaultValue="submissions" className="w-full">
-                    <TabsList className="grid w-full grid-cols-1">
-                        <TabsTrigger value="submissions">Top Submissions</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="submissions" className="mt-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {Array.from({ length: 4 }).map((_, index) => (
-=======
-    const isLoading = streaksLoading || submissionsLoading;
+    const isLoading = isUserLoading || (user && (streaksLoading || submissionsLoading));
 
     if (!user && !isUserLoading) {
         return (
@@ -113,20 +78,20 @@ export default function LeaderboardPage() {
                                 </Card>
                             ))
                         ) : topStreaks && topStreaks.length > 0 ? (
-                            topStreaks.map((user, index) => (
-                                <Card key={user.id}>
+                            topStreaks.map((profile, index) => (
+                                <Card key={profile.id}>
                                     <CardContent className="p-4 flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <span className="text-lg font-bold w-6 text-center text-muted-foreground">{index + 1}</span>
                                             <Avatar>
-                                                <AvatarImage src={user.profileImageUrl} alt={user.displayName} />
-                                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                                <AvatarImage src={profile.profileImageUrl} alt={profile.displayName} />
+                                                <AvatarFallback>{profile.displayName.charAt(0)}</AvatarFallback>
                                             </Avatar>
-                                            <span className="font-medium">{user.displayName}</span>
+                                            <span className="font-medium">{profile.displayName}</span>
                                         </div>
                                         <Badge variant="secondary" className="gap-1.5 pl-2">
                                             <Flame className="h-4 w-4 text-accent" />
-                                            {user.currentStreak} days
+                                            {profile.currentStreak} days
                                         </Badge>
                                     </CardContent>
                                 </Card>
@@ -140,7 +105,6 @@ export default function LeaderboardPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {isLoading ? (
                              Array.from({ length: 4 }).map((_, index) => (
->>>>>>> origin/main
                                 <Card key={index} className="overflow-hidden group">
                                     <CardContent className="p-0 relative">
                                         <div className="relative aspect-[4/3]">
@@ -155,71 +119,30 @@ export default function LeaderboardPage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-                            ))}
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </div>
-        );
-    }
-    
-    // 2. Logged Out State: Show a prompt to log in
-    if (!user) {
-        return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
-                 <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to view the leaderboards and see who's on top.</p>
-            </div>
-        );
-    }
-
-    // 3. Data State: Display the leaderboard
-    return (
-        <div className="space-y-8">
-            <div className="text-center">
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">Leaderboards</h1>
-                <p className="max-w-md mx-auto text-muted-foreground md:text-lg">
-                    See who's on top. Check out the most upvoted photos.
-                </p>
-            </div>
-            <Tabs defaultValue="submissions" className="w-full">
-                <TabsList className="grid w-full grid-cols-1">
-                    <TabsTrigger value="submissions">Top Submissions</TabsTrigger>
-                </TabsList>
-                <TabsContent value="submissions" className="mt-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {topSubmissions && topSubmissions.length > 0 ? (
-                            topSubmissions.map((submission, index) => {
-                                return (
-                                    <Card key={submission.id} className="overflow-hidden group">
-                                        <CardContent className="p-0 relative">
-                                            <div className="absolute top-2 left-2 z-10 bg-black/50 text-white h-8 w-8 rounded-full flex items-center justify-center font-bold text-lg">{index + 1}</div>
-                                            <div className="relative aspect-[4/3]">
-                                                <Image src={submission.photoUrl} alt="Top submission" fill sizes="(max-width: 640px) 90vw, 45vw" className="object-cover" />
+                            ))
+                        ) : topSubmissions && topSubmissions.length > 0 ? (
+                            topSubmissions.map((submission, index) => (
+                                <Card key={submission.id} className="overflow-hidden group">
+                                    <CardContent className="p-0 relative">
+                                        <div className="absolute top-2 left-2 z-10 bg-black/50 text-white h-8 w-8 rounded-full flex items-center justify-center font-bold text-lg">{index + 1}</div>
+                                        <div className="relative aspect-[4/3]">
+                                            <Image src={submission.photoUrl} alt="Top submission" fill sizes="(max-width: 640px) 90vw, 45vw" className="object-cover" />
+                                        </div>
+                                        <div className="p-4 flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback>?</AvatarFallback>
+                                                </Avatar>
+                                                <span className="text-sm font-medium italic text-muted-foreground">Submitter info private</span>
                                             </div>
-                                            <div className="p-4 flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-8 w-8">
-<<<<<<< HEAD
-                                                        <AvatarFallback>?</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="text-sm font-medium italic text-muted-foreground">Submitter info private</span>
-=======
-                                                        <AvatarFallback>U</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="text-sm font-medium">User</span>
->>>>>>> origin/main
-                                                </div>
-                                                <Badge variant="outline" className="gap-1.5">
-                                                    <Heart className="h-3.5 w-3.5 text-accent fill-current" />
-                                                    {submission.upvoteCount}
-                                                </Badge>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )
-                            })
+                                            <Badge variant="outline" className="gap-1.5">
+                                                <Heart className="h-3.5 w-3.5 text-accent fill-current" />
+                                                {submission.upvoteCount}
+                                            </Badge>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))
                         ) : (
                             <div className="col-span-1 sm:col-span-2 text-center py-8">
                                 <p className="text-muted-foreground">No submissions have been upvoted yet.</p>
