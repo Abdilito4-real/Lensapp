@@ -6,6 +6,7 @@ import { Firestore, doc, getDoc, serverTimestamp, FieldValue } from 'firebase/fi
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 import { setDocumentNonBlocking } from './non-blocking-updates';
+import { initiateAnonymousSignIn } from './non-blocking-login';
 import { UserProfile } from '@/lib/definitions';
 
 
@@ -82,6 +83,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
+        if (!firebaseUser && auth) {
+            initiateAnonymousSignIn(auth);
+            return;
+        }
+
         if (firebaseUser) {
             const userProfileRef = doc(firestore, 'userProfiles', firebaseUser.uid);
             getDoc(userProfileRef).then(userProfileSnap => {
@@ -104,13 +110,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                   totalSubmissions: 0,
                   totalUpvotesReceived: 0,
                   totalWins: 0,
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp(),
                 };
                 setDocumentNonBlocking(userProfileRef, {
                   ...newUserProfile,
                   id: firebaseUser.uid,
-                  createdAt: serverTimestamp(),
-                  updatedAt: serverTimestamp(),
-                }, {});
+                }, { merge: true });
               }
             }).catch(err => {
               console.error("Error checking for user profile:", err);

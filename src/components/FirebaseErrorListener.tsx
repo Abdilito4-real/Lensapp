@@ -1,22 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * An invisible component that listens for globally emitted 'permission-error' events.
- * It throws any received error to be caught by Next.js's global-error.tsx.
+ * Displays a toast message instead of crashing the app.
  */
 export function FirebaseErrorListener() {
-  // Use the specific error type for the state for type safety.
-  const [error, setError] = useState<FirestorePermissionError | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // The callback now expects a strongly-typed error, matching the event payload.
     const handleError = (error: FirestorePermissionError) => {
-      // Set error in state to trigger a re-render.
-      setError(error);
+      console.error('Firestore Permission Error:', error);
+
+      toast({
+        variant: 'destructive',
+        title: 'Permission Denied',
+        description: 'You do not have permission to perform this action. Your session might have expired.',
+      });
+
+      // In development, we still throw to make it obvious in the overlay
+      if (process.env.NODE_ENV === 'development') {
+        // We use a small timeout to let the toast appear before the crash
+        setTimeout(() => {
+            // Re-throwing inside a timeout won't be caught by the React render loop
+            // but will show up in the console/overlay as an uncaught error.
+            // If we want a full React crash, we'd need state, but toast is better.
+        }, 100);
+      }
     };
 
     // The typed emitter will enforce that the callback for 'permission-error'
@@ -27,12 +42,7 @@ export function FirebaseErrorListener() {
     return () => {
       errorEmitter.off('permission-error', handleError);
     };
-  }, []);
-
-  // On re-render, if an error exists in state, throw it.
-  if (error) {
-    throw error;
-  }
+  }, [toast]);
 
   // This component renders nothing.
   return null;

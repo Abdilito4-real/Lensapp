@@ -20,7 +20,10 @@ export default function HomePage() {
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
 
-    const userProfilesCollection = useMemoFirebase(() => collection(firestore, 'userProfiles'), [firestore]);
+    const userProfilesCollection = useMemoFirebase(() =>
+        (firestore && user) ? collection(firestore, 'userProfiles') : null,
+        [firestore, user]
+    );
     const { data: userProfiles, isLoading: areProfilesLoading } = useCollection<UserProfile>(userProfilesCollection);
 
     const handleSendStreak = (friendName: string) => {

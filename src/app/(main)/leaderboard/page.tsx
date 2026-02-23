@@ -6,25 +6,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
-import { Flame, Heart } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { Flame, Heart, LogIn } from 'lucide-react';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LeaderboardPage() {
     const firestore = useFirestore();
+    const { user, isUserLoading } = useUser();
 
     const topStreaksQuery = useMemoFirebase(() => 
-        firestore 
+        (firestore && user)
             ? query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)) 
             : null,
-        [firestore]
+        [firestore, user]
     );
     const { data: topStreaks, isLoading: streaksLoading } = useCollection<UserProfile>(topStreaksQuery);
 
     const topSubmissionsQuery = useMemoFirebase(() => 
-        firestore 
+        (firestore && user)
             ? query(
                 collectionGroup(firestore, 'submissions'), 
                 where('moderationStatus', '==', 'approved'),
@@ -32,22 +33,21 @@ export default function LeaderboardPage() {
                 limit(10)
               )
             : null,
-        [firestore]
+        [firestore, user]
     );
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
-    const userProfilesQuery = useMemoFirebase(() => 
-        firestore ? collection(firestore, 'userProfiles') : null,
-        [firestore]
-    );
-    const { data: userProfiles, isLoading: profilesLoading } = useCollection<UserProfile>(userProfilesQuery);
+    const isLoading = streaksLoading || submissionsLoading;
 
-    const userProfilesMap = useMemo(() => {
-        if (!userProfiles) return new Map<string, UserProfile>();
-        return new Map(userProfiles.map(p => [p.id, p]));
-    }, [userProfiles]);
-
-    const isLoading = streaksLoading || submissionsLoading || profilesLoading;
+    if (!user && !isUserLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
+                 <LogIn className="w-16 h-16 text-muted-foreground" />
+                 <h2 className="text-2xl font-bold">Please Log In</h2>
+                 <p className="text-muted-foreground">Log in to view the leaderboards and see how you rank.</p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8">
@@ -121,7 +121,6 @@ export default function LeaderboardPage() {
                              ))
                         ) : topSubmissions && topSubmissions.length > 0 ? (
                             topSubmissions.map((submission, index) => {
-                                const user = userProfilesMap.get(submission.userId);
                                 return (
                                     <Card key={submission.id} className="overflow-hidden group">
                                         <CardContent className="p-0 relative">
@@ -131,13 +130,10 @@ export default function LeaderboardPage() {
                                             </div>
                                             <div className="p-4 flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
-                                                    {user &&
-                                                        <Avatar className="h-8 w-8">
-                                                            <AvatarImage src={user.profileImageUrl} alt={user.displayName} />
-                                                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                                        </Avatar>
-                                                    }
-                                                    <span className="text-sm font-medium">{user?.displayName || 'Anonymous'}</span>
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarFallback>U</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-sm font-medium">User</span>
                                                 </div>
                                                 <Badge variant="outline" className="gap-1.5">
                                                     <Heart className="h-3.5 w-3.5 text-accent fill-current" />

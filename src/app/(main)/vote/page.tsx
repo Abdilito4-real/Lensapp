@@ -31,11 +31,12 @@ export default function VotePage() {
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {submissions.map((submission) => {
-          const image = PlaceHolderImages.find(p => p.id === submission.imageId);
+        {submissions.map((submission, index) => {
+          const submissionId = (submission as any).id || `sub-${index}`;
+          const image = PlaceHolderImages.find(p => p.id === submission.photoUrl);
 
           return (
-            <Card key={submission.id} className="overflow-hidden group">
+            <Card key={submissionId} className="overflow-hidden group">
               <CardContent className="p-0">
                 <div className="aspect-[3/4] relative">
                   {image && (
@@ -53,11 +54,11 @@ export default function VotePage() {
                       size="icon"
                       className={cn(
                           "rounded-full h-12 w-12 shadow-lg transition-all duration-300",
-                          voted[submission.id] ? 'bg-accent text-accent-foreground scale-110' : 'bg-background/50 backdrop-blur-sm text-foreground hover:bg-background'
+                          voted[submissionId] ? 'bg-accent text-accent-foreground scale-110' : 'bg-background/50 backdrop-blur-sm text-foreground hover:bg-background'
                       )}
-                      onClick={() => handleVote(submission.id)}
+                      onClick={() => handleVote(submissionId)}
                     >
-                      <Heart className={cn("h-6 w-6", voted[submission.id] && "fill-current")} />
+                      <Heart className={cn("h-6 w-6", voted[submissionId] && "fill-current")} />
                     </Button>
                   </div>
                 </div>
