@@ -11,6 +11,54 @@ import { Info } from 'lucide-react';
 
 export default function HomePage() {
     const { user, isUserLoading } = useUser();
+<<<<<<< HEAD
+=======
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const userProfilesCollection = useMemoFirebase(() =>
+        (firestore && user) ? collection(firestore, 'userProfiles') : null,
+        [firestore, user]
+    );
+    const { data: userProfiles, isLoading: areProfilesLoading } = useCollection<UserProfile>(userProfilesCollection);
+
+    const handleSendStreak = (friendName: string) => {
+        toast({
+            title: `Feature Coming Soon!`,
+            description: `Sending streaks to friends is not yet implemented.`,
+        });
+    };
+
+    const handleAddFriend = (newFriendName: string) => {
+         toast({
+            title: `Feature Coming Soon!`,
+            description: `Adding friends is not yet implemented.`,
+        });
+    }
+
+    const handleRequest = (requestorName: string, accept: boolean) => {
+        toast({
+            title: `Feature Coming Soon!`,
+            description: `Accepting/declining friend requests is not yet implemented.`,
+        });
+    }
+
+    const searchResults = useMemo(() => {
+        if (!searchTerm || !userProfiles) return [];
+        return userProfiles.filter(u => 
+            u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) && 
+            u.id !== user?.uid
+        );
+    }, [searchTerm, userProfiles, user]);
+
+    const discoverUsers = useMemo(() => {
+        if (!userProfiles || !user) return [];
+        // Simple "discover" logic: show users who aren't the current user
+        return userProfiles.filter(u => u.id !== user.uid).slice(0, 5);
+    }, [userProfiles, user]);
+
+>>>>>>> origin/main
 
     if (isUserLoading) {
         return (

@@ -6,6 +6,7 @@ import { Firestore, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { setDocumentNonBlocking } from './non-blocking-updates';
+import { initiateAnonymousSignIn } from './non-blocking-login';
 import { UserProfile } from '@/lib/definitions';
 
 interface FirebaseProviderProps {
@@ -79,7 +80,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      async (firebaseUser) => {
+      (firebaseUser) => { // Auth state determined
         if (firebaseUser) {
           try {
             const userProfileRef = doc(firestore, 'userProfiles', firebaseUser.uid);
@@ -96,25 +97,25 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 return `User-${firebaseUser.uid.substring(0, 5)}`;
               };
 
-              const newUserProfile = {
-                displayName: getDisplayName(),
-                profileImageUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
-                currentStreak: 0,
-                highestStreak: 0,
-                totalSubmissions: 0,
-                totalUpvotesReceived: 0,
-                totalWins: 0,
-                id: firebaseUser.uid,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-              };
-
-              // Fix: Remove the Omit type and use the complete object
-              await setDocumentNonBlocking(userProfileRef, newUserProfile, {});
-            }
-          } catch (err) {
-            console.error("Error checking/creating user profile:", err);
-          }
+                const newUserProfile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: FieldValue, updatedAt: FieldValue } = {
+                  displayName: getDisplayName(),
+                  profileImageUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
+                  currentStreak: 0,
+                  highestStreak: 0,
+                  totalSubmissions: 0,
+                  totalUpvotesReceived: 0,
+                  totalWins: 0,
+                };
+                setDocumentNonBlocking(userProfileRef, {
+                  ...newUserProfile,
+                  id: firebaseUser.uid,
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp(),
+                }, {});
+              }
+            }).catch(err => {
+              console.error("Error checking for user profile:", err);
+            });
         }
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
       },

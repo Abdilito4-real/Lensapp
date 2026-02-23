@@ -10,7 +10,7 @@ service cloud.firestore {
      * and badges.
      *
      * Data Structure: Data is organized into several top-level collections.
-     *   - /userProfiles: User information, restricted to owner-only access.
+     *   - /userProfiles: Publicly readable user information.
      *   - /challenges: Publicly readable daily challenges, with nested /submissions.
      *   - /badges: Publicly readable achievement definitions.
      *   - /users: A private, user-scoped collection where each user's private data
@@ -25,7 +25,8 @@ service cloud.firestore {
      *     document in the `/roles_admin/{userId}` collection. This avoids custom
      *     claims and provides a clear, auditable trail for admin access (DBAC).
      *   - Public vs. Private Reads: Global content like challenges and badges is
-     *     publicly readable. A user's profile, specific votes, and earned badges are private.
+     *     publicly readable. User profiles are also public-read to allow for leaderboards
+     *     and social features. A user's specific votes and earned badges are private.
      *   - Segregated Writes: Writes to global content are restricted to admins.
      *     Writes to user-specific data are restricted to the data owner.
      *
@@ -90,7 +91,7 @@ service cloud.firestore {
      * Prevents re-assigning a profile to a different user.
      */
     function isProfileIdImmutable() {
-      return request.resource.data.id == resource.data.id;
+      return !('id' in resource.data) || request.resource.data.id == resource.data.id;
     }
     
     /**
@@ -135,22 +136,26 @@ service cloud.firestore {
     // --------------------------------------------------------------------------
 
     /**
-     * @description Manages user profiles. Profiles are publicly readable for leaderboards
-     *              and community features. Writes are restricted to the owner.
+     * @description Manages user profiles. A user can create and update their own
+     *              profile. Profiles are publicly readable to support features like
+     *              leaderboards and viewing other users' stats.
      * @path /userProfiles/{userId}
+     * @principle A user is the authority for their own profile data (Self-Creation).
      */
     match /userProfiles/{userId} {
-      allow get, list: if true;
-      allow update: if isOwner(userId) && isProfileIdImmutable();
-      // Creation is handled by backend logic on first sign-in.
-      // Delete is explicitly disallowed for security.
-      allow create, delete: if false;
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     /**
      * @description Defines daily photo challenges. This data is public for all
-     *              users to read, but only administrators can manage them.
+     *              users to read, but only administrators can create, modify, or
+     *              delete challenges.
      * @path /challenges/{challengeId}
+     * @allow (get) Any user, signed in or not, can read a challenge.
+     * @deny (create) A regular authenticated user trying to create a new challenge.
+     * @principle Enforces public read access for global content while restricting
+     *              writes to privileged administrators.
      */
     match /challenges/{challengeId} {
       allow read: if true;
@@ -158,16 +163,22 @@ service cloud.firestore {
     }
     
     /**
-     * @description This rule is for all 'submissions' documents, handling direct
-     *              access and collection group queries. Public reads are allowed
-     *              for 'approved' submissions, which is required for leaderboards
-     *              and voting.
+     * @description This rule is specifically for all 'submissions' documents,
+     *              handling both direct access and collection group queries for leaderboards.
+     *              It allows any user to query the 'submissions' collection group,
+     *              and the 'get' rule ensures only 'approved' documents can be read by the public.
      */
     match /{path=**}/submissions/{submissionId} {
-      allow get: if resource.data.moderationStatus == 'approved'
+      // Allow listing for anyone. Client queries MUST filter for approved submissions.
+      allow list: if true;
+      // Allow reading a submission if it's approved OR if the requestor is the owner.
+      allow get: if resource.data.moderationStatus == 'approved' 
                  || (isSignedIn() && request.auth.uid == resource.data.userId);
+      // Allow creating a submission if signed in and the submission userId matches.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Allow owner to update, but not change key fields.
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isSubmissionDataImmutable();
+      // Allow owner to delete.
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
@@ -175,6 +186,10 @@ service cloud.firestore {
      * @description Defines achievement badges. This data is public for all users
      *              to view, but only administrators can manage the badge definitions.
      * @path /badges/{badgeId}
+     * @allow (list) Any user, signed in or not, can list all available badges.
+     * @deny (update) A regular authenticated user trying to edit a badge's description.
+     * @principle Enforces public read access for global content while restricting
+     *              writes to privileged administrators.
      */
     match /badges/{badgeId} {
       allow read: if true;
@@ -186,6 +201,9 @@ service cloud.firestore {
      *              this path is disallowed. Access is only granted to the subcollections
      *              within (e.g., /votes, /badges).
      * @path /users/{userId}
+     * @allow (none) No direct operations are permitted on this path.
+     * @deny (get) A user trying to read the non-existent user container document.
+     * @principle Acts as a secure, path-based namespace for user-owned data.
      */
     match /users/{userId} {
       allow read, write: if false;
@@ -194,20 +212,32 @@ service cloud.firestore {
        * @description Stores votes cast by a user. A user has full control over their
        *              own votes but cannot see, create, or delete votes for anyone else.
        * @path /users/{userId}/votes/{voteId}
+       * @allow (create) The user with ID `{userId}` creating their own vote record.
+       * @deny (get) A user trying to read another user's vote.
+       * @principle Enforces strict data ownership using path-based security.
        */
       match /votes/{voteId} {
-        allow read, write: if isOwner(userId);
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidNewVote(userId);
+        allow update: if isOwner(userId) && isVoteIdImmutable();
+        allow delete: if isOwner(userId);
       }
       
       /**
-       * @description Stores badges awarded to a user. Users can read their own list
-       *              of earned badges. Writes are disallowed as badges are awarded
-       *              by a server-side process.
+       * @description Stores badges that have been awarded to a user. Users can read
+       *              their own list of earned badges. Writes are disallowed as badges
+       *              are intended to be awarded by a server-side process.
        * @path /users/{userId}/badges/{userBadgeId}
+       * @allow (list) The user with ID `{userId}` listing their own awarded badges.
+       * @deny (create) A user trying to award a badge to themselves.
+       * @principle Restricts access to a user's own data tree and makes the
+       *              collection effectively read-only for clients.
        */
       match /badges/{userBadgeId} {
-        allow read: if isOwner(userId);
-        allow write: if false;
+        allow get, list: if isOwner(userId);
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
       }
     }
 
@@ -216,6 +246,10 @@ service cloud.firestore {
      *              writable by any client. Its sole purpose is to be checked by the
      *              `isAdmin()` helper function using `exists()`.
      * @path /roles_admin/{adminId}
+     * @allow (none) No client operations are permitted.
+     * @deny (get) Any user, including an admin, trying to read a role document directly.
+     * @principle Implements Database-backed Access Control (DBAC) by locking down
+     *              direct client access and using server-side `exists()` for role checks.
      */
     match /roles_admin/{adminId} {
       allow read, write: if false;
