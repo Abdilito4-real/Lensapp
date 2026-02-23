@@ -136,15 +136,15 @@ service cloud.firestore {
     // --------------------------------------------------------------------------
 
     /**
-     * @description Manages user profiles. A user can create and update their own
-     *              profile. Profiles are publicly readable to support features like
-     *              leaderboards and viewing other users' stats.
+     * @description Manages user profiles. Profiles can be read by anyone to
+     *              support leaderboards, but can only be listed by signed-in users.
+     *              A user can only write to their own profile.
      * @path /userProfiles/{userId}
-     * @principle A user is the authority for their own profile data (Self-Creation).
      */
     match /userProfiles/{userId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow get: if true;
+      allow list: if isSignedIn();
+      allow write: if isOwner(userId);
     }
 
     /**
@@ -163,22 +163,17 @@ service cloud.firestore {
     }
     
     /**
-     * @description This rule is specifically for all 'submissions' documents,
-     *              handling both direct access and collection group queries for leaderboards.
-     *              It allows any user to query the 'submissions' collection group,
-     *              and the 'get' rule ensures only 'approved' documents can be read by the public.
+     * @description This rule is for all 'submissions' documents, handling direct
+     *              access and collection group queries. Listing is restricted to
+     *              signed-in users. Reading a single doc is allowed if it's approved
+     *              or if the requestor is the owner.
      */
     match /{path=**}/submissions/{submissionId} {
-      // Allow listing for anyone. Client queries MUST filter for approved submissions.
-      allow list: if true;
-      // Allow reading a submission if it's approved OR if the requestor is the owner.
+      allow list: if isSignedIn();
       allow get: if resource.data.moderationStatus == 'approved' 
                  || (isSignedIn() && request.auth.uid == resource.data.userId);
-      // Allow creating a submission if signed in and the submission userId matches.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      // Allow owner to update, but not change key fields.
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isSubmissionDataImmutable();
-      // Allow owner to delete.
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
