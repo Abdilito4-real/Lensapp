@@ -5,9 +5,9 @@ const BASE_URL = 'https://verome-api.deno.dev';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { videoId: string } }
+    { params }: { params: Promise<{ videoId: string }> }
 ) {
-    const videoId = params.videoId;
+    const { videoId } = await params;
     console.log(`[PROXY] Received request for videoId: ${videoId}`);
 
     if (!videoId) {

@@ -84,29 +84,86 @@ export default function HomePage() {
 
         return (
             <div className="space-y-16 py-8 md:py-12">
-                <section className="relative overflow-hidden rounded-3xl bg-muted py-16 px-6 sm:px-12 md:py-24">
-                    <div className="relative z-10 text-center space-y-6 max-w-3xl mx-auto">
-                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-7xl text-primary animate-in fade-in slide-in-from-top-4 duration-1000">
-                            Capture. <br className="sm:hidden" />
-                            Connect. <br className="sm:hidden" />
-                            Challenge.
+                <section className="relative min-h-[600px] flex flex-col items-center justify-center py-12 px-4 overflow-visible">
+                    <div className="relative z-20 text-center space-y-4 mb-16">
+                         <h1 className="text-white text-5xl md:text-8xl font-extrabold tracking-tighter animate-in fade-in slide-in-from-top-8 duration-1000">
+                            Today's Challenge
                         </h1>
-                        <p className="text-xl text-muted-foreground md:text-2xl animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
-                            The ultimate photo challenge app for university students. Join daily challenges, showcase your skills, and connect with fellow photographers.
+                        <p className="text-[#d9e5c5]/80 text-lg md:text-2xl max-w-2xl mx-auto font-medium animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
+                            A new photo challenge every day. Submit your best shot.
                         </p>
-                        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
-                            <Button asChild size="lg" className="text-lg px-8 py-6 rounded-full shadow-lg hover:scale-105 transition-transform">
-                                <Link href="/login">Get Started Now</Link>
-                            </Button>
-                            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 rounded-full bg-background/50 backdrop-blur-sm border-2 hover:bg-background hover:scale-105 transition-transform">
-                                <Link href="/login?redirectTo=/submit">Submit Today's Photo</Link>
-                            </Button>
-                        </div>
                     </div>
 
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-                    <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
+                    <div className="relative w-full max-w-4xl mx-auto h-[450px]">
+                         {/* Overlapping Images (Background Layer) */}
+                         <div className="absolute top-0 -left-4 md:-left-20 w-48 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform -rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0">
+                             <Image
+                                src={galleryImages[0]?.imageUrl || PlaceHolderImages[0].imageUrl}
+                                alt="Challenge Sample 1"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 40vw, 300px"
+                             />
+                         </div>
+
+                         <div className="absolute top-12 -right-4 md:-right-20 w-56 md:w-72 h-72 md:h-96 rounded-2xl overflow-hidden shadow-2xl transform rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0">
+                             <Image
+                                src={galleryImages[1]?.imageUrl || PlaceHolderImages[1].imageUrl}
+                                alt="Challenge Sample 2"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 50vw, 400px"
+                             />
+                         </div>
+
+                         {/* The Challenge Card (Middle Layer) */}
+                         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                             <div className="bg-[#3d4a30] border border-white/10 rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-center space-y-8 pointer-events-auto transform transition-transform hover:scale-[1.02] duration-300">
+                                 <div className="space-y-3">
+                                     <h3 className="text-[#d9e5c5] text-3xl md:text-4xl font-bold">The Study Grind</h3>
+                                     <p className="text-[#d9e5c5]/70 text-base md:text-lg leading-relaxed">Show us your study session setup. Late nights, coffee, and books!</p>
+                                 </div>
+
+                                 <div className="space-y-3">
+                                     <p className="text-[#d9e5c5]/40 text-xs md:text-sm uppercase tracking-[0.2em] font-semibold">Challenge ends in:</p>
+                                     <div className="text-[#d9e5c5] text-4xl md:text-6xl font-mono font-bold flex justify-center items-center gap-3 md:gap-4">
+                                         <span className="bg-black/20 px-2 py-1 rounded-lg">00</span>
+                                         <span className="opacity-50">:</span>
+                                         <span className="bg-black/20 px-2 py-1 rounded-lg">00</span>
+                                         <span className="opacity-50">:</span>
+                                         <span className="bg-black/20 px-2 py-1 rounded-lg">00</span>
+                                     </div>
+                                 </div>
+
+                                 <Button asChild className="w-full bg-[#d9e5c5] text-[#3d4a30] hover:bg-white hover:scale-105 rounded-2xl py-8 text-xl font-bold shadow-lg transition-all">
+                                     <Link href="/login?redirectTo=/submit" className="flex items-center justify-center gap-3">
+                                         Submit Your Photo <Send className="w-6 h-6" />
+                                     </Link>
+                                 </Button>
+                             </div>
+                         </div>
+
+                         {/* Overlapping Images (Foreground Layer) */}
+                         <div className="absolute -bottom-12 left-4 md:left-0 w-52 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30]">
+                             <Image
+                                src={galleryImages[2]?.imageUrl || PlaceHolderImages[2].imageUrl}
+                                alt="Challenge Sample 3"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 40vw, 300px"
+                             />
+                         </div>
+
+                         <div className="absolute -bottom-6 right-4 md:right-8 w-48 md:w-60 h-64 md:h-72 rounded-2xl overflow-hidden shadow-2xl transform -rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30]">
+                             <Image
+                                src={galleryImages[3]?.imageUrl || PlaceHolderImages[3].imageUrl}
+                                alt="Challenge Sample 4"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 40vw, 300px"
+                             />
+                         </div>
+                    </div>
                 </section>
 
                 <section className="space-y-8">

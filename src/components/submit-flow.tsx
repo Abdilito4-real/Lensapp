@@ -707,7 +707,7 @@ export function SubmitFlow({ challengeTopic, challengeDescription }: { challenge
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-              <AlertDialogAction onClick={resetFlow} variant="destructive">Discard</AlertDialogAction>
+              <AlertDialogAction onClick={resetFlow} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Discard</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

@@ -48,7 +48,17 @@ const suggestCaptionFlow = ai.defineFlow(
     outputSchema: SuggestCaptionOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      console.log('Running suggestCaptionFlow...');
+      const {output} = await prompt(input);
+      if (!output) {
+        throw new Error('AI returned an empty output for caption suggestion.');
+      }
+      console.log('suggestCaptionFlow completed successfully.');
+      return output;
+    } catch (error) {
+      console.error('Error in suggestCaptionFlow:', error);
+      throw error;
+    }
   }
 );
