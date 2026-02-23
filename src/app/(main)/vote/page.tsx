@@ -9,10 +9,37 @@ import { submissions } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
+import { Loader2, LogIn } from 'lucide-react';
+import Link from 'next/link';
 
 export default function VotePage() {
+  const { user, isUserLoading } = useUser();
   const [voted, setVoted] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+
+  if (isUserLoading) {
+      return (
+          <div className="flex items-center justify-center h-[50vh]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+      )
+  }
+
+  if (!user) {
+    return (
+        <div className="flex flex-col items-center justify-center text-center space-y-6 h-[50vh]">
+             <LogIn className="w-16 h-16 text-muted-foreground" />
+             <div className="space-y-2">
+                <h2 className="text-2xl font-bold">Please Log In</h2>
+                <p className="text-muted-foreground max-w-sm">Log in to vote on today's submissions and support the community.</p>
+             </div>
+             <Button asChild>
+                <Link href="/login?redirectTo=/vote">Sign In to Continue</Link>
+             </Button>
+        </div>
+    )
+  }
 
   const handleVote = (submissionId: string) => {
     setVoted(prev => ({ ...prev, [submissionId]: !prev[submissionId] }));

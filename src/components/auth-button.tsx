@@ -10,23 +10,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-} from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
 import { LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import Link from 'next/link';
-import { EmailAuthDialog } from './email-auth-dialog';
 
 export function AuthButton() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
 
   const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `userProfiles/${user.uid}`) : null), [user, firestore]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -77,15 +71,12 @@ export function AuthButton() {
   }
 
   return (
-    <>
-      <Button onClick={() => setIsLoginDialogOpen(true)}>
+    <Button asChild>
+      <Link href="/login">
         <LogIn className="mr-2 h-4 w-4" />
         Login
-      </Button>
-      <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
-        <EmailAuthDialog onOpenChange={setIsLoginDialogOpen} />
-      </Dialog>
-    </>
+      </Link>
+    </Button>
   );
 }
 

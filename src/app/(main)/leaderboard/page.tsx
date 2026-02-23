@@ -11,6 +11,8 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import type { UserProfile, Submission } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function LeaderboardPage() {
     const firestore = useFirestore();
@@ -41,10 +43,15 @@ export default function LeaderboardPage() {
 
     if (!user && !isUserLoading) {
         return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
+            <div className="flex flex-col items-center justify-center text-center space-y-6 h-[50vh]">
                  <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to view the leaderboards and see how you rank.</p>
+                 <div className="space-y-2">
+                    <h2 className="text-2xl font-bold">Please Log In</h2>
+                    <p className="text-muted-foreground max-w-sm">Log in to view the leaderboards and see how you rank against the community.</p>
+                 </div>
+                 <Button asChild>
+                    <Link href="/login?redirectTo=/leaderboard">Sign In to Continue</Link>
+                 </Button>
             </div>
         )
     }

@@ -83,11 +83,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
-        if (!firebaseUser && auth) {
-            initiateAnonymousSignIn(auth);
-            return;
-        }
-
         if (firebaseUser) {
             const userProfileRef = doc(firestore, 'userProfiles', firebaseUser.uid);
             getDoc(userProfileRef).then(userProfileSnap => {

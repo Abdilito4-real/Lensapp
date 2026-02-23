@@ -3,12 +3,14 @@
 import { useState, useRef, type ChangeEvent, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle, X, Plus, SwitchCamera, RefreshCcw } from 'lucide-react';
+import { Upload, Camera, FileText, BrainCircuit, BookCopy, Loader2, AlertCircle, X, Plus, SwitchCamera, RefreshCcw, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateStudyTools } from '@/lib/studyactions';
 import type { SnapNotesOutput } from '@/ai/flows/snap-notes-flow';
@@ -162,6 +164,7 @@ const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<F
 
 
 export default function SnapNotesPage() {
+  const { user, isUserLoading } = useUser();
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
@@ -271,6 +274,29 @@ export default function SnapNotesPage() {
       setImageFiles([]);
       setImagePreviews([]);
       stopCamera();
+  }
+
+  if (isUserLoading) {
+      return (
+          <div className="flex items-center justify-center h-[50vh]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+      )
+  }
+
+  if (!user) {
+    return (
+        <div className="flex flex-col items-center justify-center text-center space-y-6 h-[50vh]">
+             <LogIn className="w-16 h-16 text-muted-foreground" />
+             <div className="space-y-2">
+                <h2 className="text-2xl font-bold">Please Log In</h2>
+                <p className="text-muted-foreground max-w-sm">Log in to use SnapNotes and turn your photos into smart study tools.</p>
+             </div>
+             <Button asChild>
+                <Link href="/login?redirectTo=/snap-notes">Sign In to Continue</Link>
+             </Button>
+        </div>
+    )
   }
 
   // Camera View

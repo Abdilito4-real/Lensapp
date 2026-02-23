@@ -11,6 +11,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { badges, findSubmissionById } from '@/lib/data';
 import { Flame, Heart, Trophy, LogIn, Camera, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { UserProfile } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -127,10 +128,15 @@ export default function ProfilePage() {
     
     if (!user || !userProfile) {
         return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
+            <div className="flex flex-col items-center justify-center text-center space-y-6 h-[50vh]">
                  <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to view your profile, streaks, and awards.</p>
+                 <div className="space-y-2">
+                    <h2 className="text-2xl font-bold">Please Log In</h2>
+                    <p className="text-muted-foreground max-w-sm">Log in to view your profile, streaks, and awards.</p>
+                 </div>
+                 <Button asChild>
+                    <Link href="/login?redirectTo=/profile">Sign In to Continue</Link>
+                 </Button>
             </div>
         )
     }

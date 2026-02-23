@@ -9,10 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { UserProfile } from '@/lib/definitions';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Search, UserPlus, Send, Check, X, LogIn, Users } from 'lucide-react';
+import { Search, UserPlus, Send, Check, X, LogIn, Users, Camera, Trophy, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { collection } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 export default function HomePage() {
     const { user, isUserLoading } = useUser();
@@ -80,10 +81,47 @@ export default function HomePage() {
 
     if (!user) {
         return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
-                 <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to find friends and manage your connections.</p>
+            <div className="space-y-12 py-8 md:py-16">
+                <div className="text-center space-y-4">
+                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl text-primary">
+                        Capture. Connect. Challenge.
+                    </h1>
+                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                        The ultimate photo challenge app for university students. Join daily challenges, showcase your skills, and connect with fellow photographers.
+                    </p>
+                    <div className="flex justify-center gap-4 pt-4">
+                        <Button asChild size="lg">
+                            <Link href="/login">Get Started</Link>
+                        </Button>
+                        <Button asChild variant="outline" size="lg">
+                            <Link href="/login?redirectTo=/submit">Submit Your Photo</Link>
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
+                    <Card className="bg-card/50 backdrop-blur-sm">
+                        <CardHeader>
+                            <Camera className="w-12 h-12 text-primary mb-2" />
+                            <CardTitle>Daily Challenges</CardTitle>
+                            <CardDescription>Fresh inspiration every day to keep your creative juices flowing.</CardDescription>
+                        </CardHeader>
+                    </Card>
+                    <Card className="bg-card/50 backdrop-blur-sm">
+                        <CardHeader>
+                            <Trophy className="w-12 h-12 text-primary mb-2" />
+                            <CardTitle>Global Leaderboards</CardTitle>
+                            <CardDescription>See how your photography stacks up against the best in the community.</CardDescription>
+                        </CardHeader>
+                    </Card>
+                    <Card className="bg-card/50 backdrop-blur-sm">
+                        <CardHeader>
+                            <BookOpen className="w-12 h-12 text-primary mb-2" />
+                            <CardTitle>Snap Notes</CardTitle>
+                            <CardDescription>AI-powered insights and captions for your photographic masterpieces.</CardDescription>
+                        </CardHeader>
+                    </Card>
+                </div>
             </div>
         )
     }
