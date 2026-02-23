@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import {
   createUserWithEmailAndPassword,
@@ -51,7 +51,7 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
-export default function LoginPage() {
+function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const auth = useAuth();
@@ -263,5 +263,17 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+        <div className="flex items-center justify-center h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
