@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: Users },
+  { href: '/community', label: 'Community', icon: Users },
   { href: '/snap-notes', label: 'Study', icon: BookOpen },
   { href: '/submit', label: 'Submit', icon: Camera },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -32,7 +32,7 @@ export function DesktopNav() {
                 {navItems.map((item) => {
                     if (item.requiresAuth && !isAuthenticated) return null;
                     
-                    const isActive = (item.href === '/' && pathname === '/') || (item.href !== '/' && pathname.startsWith(item.href));
+                    const isActive = pathname.startsWith(item.href);
 
                     return (
                         <Tooltip key={item.href} delayDuration={0}>
