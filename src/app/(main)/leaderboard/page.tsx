@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -47,21 +48,22 @@ function LeaderboardSkeleton() {
 
 function LeaderboardContent() {
     const firestore = useFirestore();
+    const { user } = useUser();
 
     const topStreaksQuery = useMemoFirebase(() => 
-        query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)),
-        [firestore]
+        (firestore && user) ? query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)) : null,
+        [firestore, user]
     );
     const { data: topStreaks, isLoading: streaksLoading } = useCollection<UserProfile>(topStreaksQuery);
 
     const topSubmissionsQuery = useMemoFirebase(() => 
-        query(
+        (firestore && user) ? query(
             collectionGroup(firestore, 'submissions'), 
             where('moderationStatus', '==', 'approved'),
             orderBy('upvoteCount', 'desc'), 
             limit(10)
-        ),
-        [firestore]
+        ) : null,
+        [firestore, user]
     );
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
