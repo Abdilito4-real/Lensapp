@@ -80,26 +80,59 @@ export default function HomePage() {
     }
 
     if (!user) {
-        return (
-            <div className="space-y-12 py-8 md:py-16">
-                <div className="text-center space-y-4">
-                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl text-primary">
-                        Capture. Connect. Challenge.
-                    </h1>
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                        The ultimate photo challenge app for university students. Join daily challenges, showcase your skills, and connect with fellow photographers.
-                    </p>
-                    <div className="flex justify-center gap-4 pt-4">
-                        <Button asChild size="lg">
-                            <Link href="/login">Get Started</Link>
-                        </Button>
-                        <Button asChild variant="outline" size="lg">
-                            <Link href="/login?redirectTo=/submit">Submit Your Photo</Link>
-                        </Button>
-                    </div>
-                </div>
+        const galleryImages = PlaceHolderImages.filter(img => img.id.startsWith('gallery-'));
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
+        return (
+            <div className="space-y-16 py-8 md:py-12">
+                <section className="relative overflow-hidden rounded-3xl bg-muted py-16 px-6 sm:px-12 md:py-24">
+                    <div className="relative z-10 text-center space-y-6 max-w-3xl mx-auto">
+                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-7xl text-primary animate-in fade-in slide-in-from-top-4 duration-1000">
+                            Capture. <br className="sm:hidden" />
+                            Connect. <br className="sm:hidden" />
+                            Challenge.
+                        </h1>
+                        <p className="text-xl text-muted-foreground md:text-2xl animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
+                            The ultimate photo challenge app for university students. Join daily challenges, showcase your skills, and connect with fellow photographers.
+                        </p>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
+                            <Button asChild size="lg" className="text-lg px-8 py-6 rounded-full shadow-lg hover:scale-105 transition-transform">
+                                <Link href="/login">Get Started Now</Link>
+                            </Button>
+                            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 rounded-full bg-background/50 backdrop-blur-sm border-2 hover:bg-background hover:scale-105 transition-transform">
+                                <Link href="/login?redirectTo=/submit">Submit Today's Photo</Link>
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+                    <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
+                </section>
+
+                <section className="space-y-8">
+                    <div className="text-center space-y-2">
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Featured Gallery</h2>
+                        <p className="text-muted-foreground">See what our community is capturing on campus.</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {galleryImages.map((image) => (
+                            <div key={image.id} className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted shadow-md hover:shadow-xl transition-all">
+                                <Image
+                                    src={image.imageUrl}
+                                    alt={image.description}
+                                    fill
+                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    sizes="(max-width: 768px) 50vw, 25vw"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                    <p className="text-white text-sm font-medium">{image.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <Card className="bg-card/50 backdrop-blur-sm">
                         <CardHeader>
                             <Camera className="w-12 h-12 text-primary mb-2" />
