@@ -12,44 +12,62 @@ import { collection, query, orderBy, limit, collectionGroup, where } from 'fireb
 import type { UserProfile, Submission } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function LeaderboardPage() {
+
+function LeaderboardSkeleton() {
+    return (
+         <div className="space-y-8">
+            <div className="text-center">
+                <Skeleton className="h-10 w-1/2 mx-auto" />
+                <Skeleton className="h-5 w-2/3 mx-auto mt-2" />
+            </div>
+            <Tabs defaultValue="streaks" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="streaks" disabled>Top Streaks</TabsTrigger>
+                    <TabsTrigger value="submissions" disabled>Top Submissions</TabsTrigger>
+                </TabsList>
+                <TabsContent value="streaks" className="mt-6">
+                     <div className="space-y-4">
+                        {Array.from({ length: 5 }).map((_, index) => (
+                            <Card key={index}>
+                                <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton className="h-10 w-10 rounded-full" />
+                                        <Skeleton className="h-6 w-32" />
+                                    </div>
+                                    <Skeleton className="h-6 w-20" />
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+            </Tabs>
+        </div>
+    )
+}
+
+function LeaderboardContent() {
     const firestore = useFirestore();
-    const { user, isUserLoading } = useUser();
 
     const topStreaksQuery = useMemoFirebase(() => 
-        (firestore && user)
-            ? query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)) 
-            : null,
-        [firestore, user]
+        query(collection(firestore, 'userProfiles'), orderBy('currentStreak', 'desc'), limit(10)),
+        [firestore]
     );
     const { data: topStreaks, isLoading: streaksLoading } = useCollection<UserProfile>(topStreaksQuery);
 
     const topSubmissionsQuery = useMemoFirebase(() => 
-        (firestore && user)
-            ? query(
-                collectionGroup(firestore, 'submissions'), 
-                where('moderationStatus', '==', 'approved'),
-                orderBy('upvoteCount', 'desc'), 
-                limit(10)
-              )
-            : null,
-        [firestore, user]
+        query(
+            collectionGroup(firestore, 'submissions'), 
+            where('moderationStatus', '==', 'approved'),
+            orderBy('upvoteCount', 'desc'), 
+            limit(10)
+        ),
+        [firestore]
     );
     const { data: topSubmissions, isLoading: submissionsLoading } = useCollection<Submission>(topSubmissionsQuery);
 
-    const isLoading = streaksLoading || submissionsLoading;
+    const isDataLoading = streaksLoading || submissionsLoading;
 
-    if (!user && !isUserLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
-                 <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to view the leaderboards and see how you rank.</p>
-            </div>
-        )
-    }
-
-    return (
+     return (
         <div className="space-y-8">
             <div className="text-center">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">Leaderboards</h1>
@@ -64,7 +82,7 @@ export default function LeaderboardPage() {
                 </TabsList>
                 <TabsContent value="streaks" className="mt-6">
                     <div className="space-y-4">
-                        {isLoading ? (
+                        {isDataLoading ? (
                             Array.from({ length: 5 }).map((_, index) => (
                                 <Card key={index}>
                                     <CardContent className="p-4 flex items-center justify-between">
@@ -102,7 +120,7 @@ export default function LeaderboardPage() {
                 </TabsContent>
                 <TabsContent value="submissions" className="mt-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {isLoading ? (
+                        {isDataLoading ? (
                              Array.from({ length: 4 }).map((_, index) => (
                                 <Card key={index} className="overflow-hidden group">
                                     <CardContent className="p-0 relative">
@@ -154,4 +172,24 @@ export default function LeaderboardPage() {
             </Tabs>
         </div>
     );
+}
+
+export default function LeaderboardPage() {
+    const { user, isUserLoading } = useUser();
+
+    if (isUserLoading) {
+        return <LeaderboardSkeleton />;
+    }
+
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
+                 <LogIn className="w-16 h-16 text-muted-foreground" />
+                 <h2 className="text-2xl font-bold">Please Log In</h2>
+                 <p className="text-muted-foreground">Log in to view the leaderboards and see how you rank.</p>
+            </div>
+        )
+    }
+
+    return <LeaderboardContent />;
 }
