@@ -177,20 +177,10 @@ function LeaderboardContent() {
 }
 
 export default function LeaderboardPage() {
-    const { user, isUserLoading } = useUser();
+    const { isUserLoading } = useUser();
 
     if (isUserLoading) {
         return <LeaderboardSkeleton />;
-    }
-
-    if (!user) {
-        return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
-                 <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to view the leaderboards and see how you rank.</p>
-            </div>
-        )
     }
 
     return <LeaderboardContent />;

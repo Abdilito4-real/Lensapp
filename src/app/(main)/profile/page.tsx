@@ -126,13 +126,8 @@ export default function ProfilePage() {
     }
     
     if (!user || !userProfile) {
-        return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
-                 <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to view your profile, streaks, and awards.</p>
-            </div>
-        )
+        // This should not be reached because the layout handles it, but it's a good fallback.
+        return null;
     }
 
     return (

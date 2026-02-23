@@ -62,7 +62,7 @@ export default function CommunityPage() {
     }, [userProfiles, user]);
 
 
-    if (isUserLoading) {
+    if (isUserLoading || areProfilesLoading) {
         return (
             <div className="space-y-8">
                 <div className="text-center">
@@ -74,16 +74,6 @@ export default function CommunityPage() {
                     <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
                  </div>
-            </div>
-        )
-    }
-
-    if (!user) {
-        return (
-            <div className="flex flex-col items-center justify-center text-center space-y-4 h-[50vh]">
-                 <LogIn className="w-16 h-16 text-muted-foreground" />
-                 <h2 className="text-2xl font-bold">Please Log In</h2>
-                 <p className="text-muted-foreground">Log in to find friends and manage your connections.</p>
             </div>
         )
     }
