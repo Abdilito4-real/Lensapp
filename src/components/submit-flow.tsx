@@ -501,22 +501,10 @@ export function SubmitFlow({ challengeTopic, challengeDescription, challengeId =
             canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.9);
         });
 
-        // 1. Upload to Cloudinary via Proxy
+        // 1. Upload to Firebase Storage directly
         const fileName = `${Date.now()}-${user.uid}.jpg`;
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', blob, fileName);
-
-        const uploadResponse = await fetch('/api/upload', {
-            method: 'POST',
-            body: uploadFormData,
-        });
-
-        if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json();
-            throw new Error(errorData.error || 'Failed to upload photo to Cloudinary');
-        }
-
-        const { url: downloadUrl } = await uploadResponse.json();
+        const path = `submissions/${challengeId}/${user.uid}/${fileName}`;
+        const downloadUrl = await uploadFile(storage, path, blob);
 
         // 2. AI Moderation
         const formData = new FormData();

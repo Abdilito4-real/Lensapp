@@ -15,13 +15,15 @@ export async function suggestCaption(
   }
 
   try {
+    console.log('Server Action: suggestCaption called');
     const result = await suggestCaptionFlow({
       photoDataUri: validatedFields.data.photoDataUri,
     });
+    console.log('Server Action: suggestCaption success');
     return { caption: result.caption };
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error in suggestCaption server action:', e);
-    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
+    const errorMessage = e.message || 'An unknown error occurred during AI caption generation';
     return { error: errorMessage };
   }
 }

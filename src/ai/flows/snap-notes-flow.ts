@@ -96,12 +96,14 @@ const snapNotesFlow = ai.defineFlow(
       console.log(`Running snapNotesFlow with action: ${input.action}...`);
       const {output} = await prompt(input);
       if (!output) {
+        console.error(`AI returned an empty output for snapNotesFlow (${input.action}).`);
         throw new Error(`AI returned an empty output for snapNotesFlow (${input.action}).`);
       }
       console.log('snapNotesFlow completed successfully.');
       return output;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in snapNotesFlow:', error);
+      if (error.message) console.error('Error Message:', error.message);
       throw error;
     }
   }

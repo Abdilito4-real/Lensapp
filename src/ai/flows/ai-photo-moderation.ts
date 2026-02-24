@@ -71,7 +71,16 @@ const aiPhotoModerationFlow = ai.defineFlow(
     outputSchema: AiPhotoModerationOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      console.log('Running aiPhotoModerationFlow...');
+      const {output} = await prompt(input);
+      if (!output) {
+        throw new Error('AI returned an empty output for photo moderation.');
+      }
+      return output;
+    } catch (error: any) {
+      console.error('Error in aiPhotoModerationFlow:', error);
+      throw error;
+    }
   }
 );

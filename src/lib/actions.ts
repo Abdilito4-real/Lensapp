@@ -43,18 +43,20 @@ export async function moderatePhoto(
     const buffer = Buffer.from(await photo.arrayBuffer());
     const photoDataUri = toDataURI(buffer, photo.type);
 
+    console.log('Server Action: moderatePhoto called');
     const result = await aiPhotoModeration({
       photoDataUri: photoDataUri,
       dailyChallengeTopic: topic,
     });
+    console.log('Server Action: moderatePhoto success');
 
     return {
       alignsWithTopic: result.alignsWithTopic,
       reason: result.reason,
     };
-  } catch (e) {
-    console.error(e);
-    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+  } catch (e: any) {
+    console.error('Error in moderatePhoto server action:', e);
+    const errorMessage = e.message || 'An unknown error occurred during AI moderation';
     return { error: `Failed to moderate photo: ${errorMessage}` };
   }
 }

@@ -50,14 +50,21 @@ const suggestCaptionFlow = ai.defineFlow(
   async input => {
     try {
       console.log('Running suggestCaptionFlow...');
+      if (!process.env.GOOGLE_GENAI_API_KEY) {
+        console.error('GOOGLE_GENAI_API_KEY is missing');
+      }
       const {output} = await prompt(input);
       if (!output) {
+        console.error('AI returned empty output');
         throw new Error('AI returned an empty output for caption suggestion.');
       }
       console.log('suggestCaptionFlow completed successfully.');
       return output;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in suggestCaptionFlow:', error);
+      // Log more details if available
+      if (error.status) console.error('Error Status:', error.status);
+      if (error.message) console.error('Error Message:', error.message);
       throw error;
     }
   }

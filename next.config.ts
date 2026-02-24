@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/site.webmanifest',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
     ];
   },
   async redirects() {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, type ChangeEvent } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection, useFirebase } from '@/firebase';
 import { doc, serverTimestamp, query, collectionGroup, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { UserProfile, Submission } from '@/lib/definitions';
@@ -17,10 +17,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ImageCropper } from '@/components/image-cropper';
+import { uploadFile } from '@/lib/storage-utils';
 
 
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
+    const { storage } = useFirebase();
     const firestore = useFirestore();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,20 +73,9 @@ export default function ProfilePage() {
             const response = await fetch(croppedImageSrc);
             const blob = await response.blob();
             
-            const formData = new FormData();
-            formData.append('file', blob, 'avatar.png');
-
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!uploadResponse.ok) {
-                const errorData = await uploadResponse.json();
-                throw new Error(errorData.error || 'Upload to Cloudinary failed');
-            }
-
-            const { url: downloadURL } = await uploadResponse.json();
+            const fileName = `avatar-${Date.now()}.png`;
+            const path = `avatars/${user.uid}/${fileName}`;
+            const downloadURL = await uploadFile(storage, path, blob);
             
             updateDocumentNonBlocking(userProfileRef, {
                 profileImageUrl: downloadURL,

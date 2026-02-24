@@ -41,18 +41,20 @@ export async function generateStudyTools(
         })
     );
 
+    console.log(`Server Action: generateStudyTools called for action: ${action}`);
     const result = await createStudyTools({
       photoDataUris: photoDataUris,
       action: action,
     });
+    console.log(`Server Action: generateStudyTools success for action: ${action}`);
 
     return {
       result: result,
       timestamp: Date.now(), // to force re-render
     };
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error in generateStudyTools server action:', e);
-    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    const errorMessage = e.message || 'An unknown error occurred during AI study tool generation';
     return { error: `AI Error: ${errorMessage}. Please try again.` };
   }
 }
