@@ -169,8 +169,9 @@ service cloud.firestore {
      */
     // Support collection group queries on 'submissions'
     match /{path=**}/submissions/{submissionId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (
+      allow get: if isSignedIn() && (resource.data.moderationStatus == 'approved' || resource.data.userId == request.auth.uid);
+      allow list: if isSignedIn(); // Queries must be filtered by status or user
+      allow write: if isSignedIn() && (
         (resource == null && request.resource.data.userId == request.auth.uid) ||
         (resource != null && resource.data.userId == request.auth.uid)
       );

@@ -36,7 +36,8 @@ export default function ProfilePage() {
             ? query(
                 collectionGroup(firestore, 'submissions'),
                 where('userId', '==', user.uid),
-                where('moderationStatus', '==', 'approved')
+                where('moderationStatus', '==', 'approved'),
+                orderBy('submittedAt', 'desc')
               )
             : null,
         [firestore, user]
