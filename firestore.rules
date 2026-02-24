@@ -164,17 +164,12 @@ service cloud.firestore {
     
     /**
      * @description This rule is specifically for all 'submissions' documents,
-     *              handling both direct access and collection group queries for leaderboards.
-     *              It allows any user to query the 'submissions' collection group,
-     *              and the 'get' rule ensures only 'approved' documents can be read by the public.
+     *              handling both direct access and collection group queries.
+     *              It allows any authenticated user to query the 'submissions' collection group.
      */
     // Support collection group queries on 'submissions'
     match /{path=**}/submissions/{submissionId} {
-      allow read: if request.auth != null && (
-        resource == null || // Allow listing if query filters are applied correctly
-        resource.data.moderationStatus == 'approved' ||
-        resource.data.userId == request.auth.uid
-      );
+      allow read: if request.auth != null && (resource.data.moderationStatus == 'approved' || resource.data.userId == request.auth.uid);
       allow write: if request.auth != null && (
         (resource == null && request.resource.data.userId == request.auth.uid) ||
         (resource != null && resource.data.userId == request.auth.uid)

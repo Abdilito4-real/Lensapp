@@ -92,37 +92,11 @@ export default function VotePage() {
                 </p>
             </div>
 
-            <Tabs defaultValue="photos" className="w-full">
+            <Tabs defaultValue="streaks" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 max-w-[400px] mx-auto">
-                    <TabsTrigger value="photos">Daily Photos</TabsTrigger>
                     <TabsTrigger value="streaks">User Streaks</TabsTrigger>
+                    <TabsTrigger value="photos">Daily Photos</TabsTrigger>
                 </TabsList>
-
-                <TabsContent value="photos" className="mt-8 space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                        {submissionsLoading ? (
-                            Array.from({ length: 6 }).map((_, i) => (
-                                <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
-                            ))
-                        ) : topSubmissions && topSubmissions.length > 0 ? (
-                            topSubmissions.map((submission) => (
-                                <SubmissionCard
-                                    key={submission.id}
-                                    submission={submission}
-                                    isVoted={voted[submission.id]}
-                                    onVote={() => handleVote(submission.id)}
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-full text-center py-12 bg-muted/30 rounded-2xl border-2 border-dashed">
-                                <p className="text-muted-foreground">No approved submissions yet for today. Be the first!</p>
-                                <Button asChild variant="link" className="mt-2">
-                                    <Link href="/submit">Submit a photo</Link>
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                </TabsContent>
 
                 <TabsContent value="streaks" className="mt-8">
                     <div className="space-y-4 max-w-2xl mx-auto">
@@ -159,6 +133,33 @@ export default function VotePage() {
                         )}
                     </div>
                 </TabsContent>
+
+                <TabsContent value="photos" className="mt-8 space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {submissionsLoading ? (
+                            Array.from({ length: 6 }).map((_, i) => (
+                                <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
+                            ))
+                        ) : topSubmissions && topSubmissions.length > 0 ? (
+                            topSubmissions.map((submission) => (
+                                <SubmissionCard
+                                    key={submission.id}
+                                    submission={submission}
+                                    isVoted={voted[submission.id]}
+                                    onVote={() => handleVote(submission.id)}
+                                />
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-12 bg-muted/30 rounded-2xl border-2 border-dashed">
+                                <p className="text-muted-foreground">No approved submissions yet for today. Be the first!</p>
+                                <Button asChild variant="link" className="mt-2">
+                                    <Link href="/submit">Submit a photo</Link>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+
             </Tabs>
         </div>
     );

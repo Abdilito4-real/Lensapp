@@ -1,7 +1,7 @@
 {
   "name": "Lens - Daily Photo Challenge",
   "short_name": "Lens",
-  "description": "Join daily photo challenges, vote on submissions, and climb the leaderboard.",
+  "description": "Join daily photo challenges, vote on submissions, and keep your streak alive.",
   "icons": [
     {
       "src": "/logo.png",
