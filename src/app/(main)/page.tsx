@@ -83,10 +83,10 @@ export default function HomePage() {
         const galleryImages = PlaceHolderImages.filter(img => img.id.startsWith('gallery-'));
 
         return (
-            <div className="space-y-16 py-8 md:py-12">
-                <section className="relative min-h-[500px] flex flex-col items-center justify-center py-8 px-4 overflow-visible">
-                    <div className="relative z-20 text-center space-y-4 mb-8 md:mb-12">
-                         <h1 className="text-white text-3xl md:text-6xl font-extrabold tracking-tighter animate-in fade-in slide-in-from-top-8 duration-1000">
+            <div className="space-y-16">
+                <section className="relative h-[calc(100vh-80px)] min-h-[600px] flex flex-col items-center justify-center py-4 px-4 overflow-hidden">
+                    <div className="relative z-20 text-center space-y-2 mb-4 md:mb-8">
+                         <h1 className="text-white text-4xl md:text-7xl font-extrabold tracking-tighter animate-in fade-in slide-in-from-top-8 duration-1000">
                             Today's Challenge
                         </h1>
                         <p className="text-[#d9e5c5]/80 text-sm md:text-xl max-w-2xl mx-auto font-medium animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 px-4">
@@ -94,9 +94,9 @@ export default function HomePage() {
                         </p>
                     </div>
 
-                    <div className="relative w-full max-w-4xl mx-auto h-[350px] md:h-[400px]">
+                    <div className="relative w-full max-w-4xl mx-auto h-[400px] md:h-[500px]">
                          {/* Overlapping Images (Background Layer) */}
-                         <div className="absolute top-0 -left-4 md:-left-20 w-48 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform -rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0 hidden md:block">
+                         <div className="absolute -top-10 -left-10 md:-left-28 w-48 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform -rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0 hidden md:block">
                              <Image
                                 src={galleryImages[0]?.imageUrl || PlaceHolderImages[0].imageUrl}
                                 alt="Challenge Sample 1"
@@ -106,7 +106,7 @@ export default function HomePage() {
                              />
                          </div>
 
-                         <div className="absolute top-12 -right-4 md:-right-20 w-56 md:w-72 h-72 md:h-96 rounded-2xl overflow-hidden shadow-2xl transform rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0 hidden md:block">
+                         <div className="absolute top-2 -right-10 md:-right-28 w-56 md:w-72 h-72 md:h-96 rounded-2xl overflow-hidden shadow-2xl transform rotate-12 transition-all hover:rotate-0 hover:scale-105 duration-500 z-0 hidden md:block">
                              <Image
                                 src={galleryImages[1]?.imageUrl || PlaceHolderImages[1].imageUrl}
                                 alt="Challenge Sample 2"
@@ -144,7 +144,7 @@ export default function HomePage() {
                          </div>
 
                          {/* Overlapping Images (Foreground Layer) */}
-                         <div className="absolute -bottom-12 left-4 md:left-0 w-52 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30] hidden md:block">
+                         <div className="absolute -bottom-16 left-4 md:-left-10 w-52 md:w-64 h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl transform rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30] hidden md:block">
                              <Image
                                 src={galleryImages[2]?.imageUrl || PlaceHolderImages[2].imageUrl}
                                 alt="Challenge Sample 3"
@@ -154,7 +154,7 @@ export default function HomePage() {
                              />
                          </div>
 
-                         <div className="absolute -bottom-6 right-4 md:right-8 w-48 md:w-60 h-64 md:h-72 rounded-2xl overflow-hidden shadow-2xl transform -rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30] hidden md:block">
+                         <div className="absolute -bottom-10 right-4 md:right-0 w-48 md:w-60 h-64 md:h-72 rounded-2xl overflow-hidden shadow-2xl transform -rotate-6 transition-all hover:rotate-0 hover:scale-110 duration-500 z-20 border-4 border-[#3d4a30] hidden md:block">
                              <Image
                                 src={galleryImages[3]?.imageUrl || PlaceHolderImages[3].imageUrl}
                                 alt="Challenge Sample 4"

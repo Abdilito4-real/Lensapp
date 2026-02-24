@@ -11,7 +11,7 @@ export default function MainLayout({
     <div className="flex flex-col min-h-screen">
       <AppHeader />
       <DesktopNav />
-      <main className="flex-1 container py-8 md:py-12">
+      <main className="flex-1 container py-0 md:py-0">
         <div className="pb-16 md:pb-0">
           {children}
         </div>

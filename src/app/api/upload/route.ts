@@ -8,6 +8,14 @@ cloudinary.config({
 });
 
 export async function POST(request: Request) {
+  if (!process.env.CLOUDINARY_URL) {
+    console.error('CLOUDINARY_URL is not defined in environment variables.');
+    return NextResponse.json({
+        error: 'Server configuration error.',
+        details: 'Cloudinary credentials missing.'
+    }, { status: 500 });
+  }
+
   const formData = await request.formData();
   const file = formData.get('file') as File;
 
