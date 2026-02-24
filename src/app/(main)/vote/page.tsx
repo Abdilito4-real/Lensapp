@@ -28,7 +28,6 @@ export default function VotePage() {
             ? query(
                 collectionGroup(firestore, 'submissions'),
                 where('moderationStatus', '==', 'approved'),
-                orderBy('upvoteCount', 'desc'),
                 limit(15)
               )
             : null,

@@ -32,8 +32,12 @@ export async function POST(request: Request) {
     // Return the secure URL of the uploaded image.
     return NextResponse.json({ url: result.secure_url }, { status: 200 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Cloudinary upload error:', error);
-    return NextResponse.json({ error: 'Upload to Cloudinary failed.' }, { status: 500 });
+    return NextResponse.json({
+        error: 'Upload to Cloudinary failed.',
+        details: error.message || 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }
