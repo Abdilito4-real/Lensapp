@@ -3,7 +3,7 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, getDoc, serverTimestamp, FieldValue } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged } from 'firebase/auth';
+import { Auth, User, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 import { setDocumentNonBlocking } from './non-blocking-updates';
 import { UserProfile } from '@/lib/definitions';
@@ -97,7 +97,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                     return `User-${firebaseUser.uid.substring(0, 5)}`;
                 }
 
-                const newUserProfile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: FieldValue, updatedAt: FieldValue } = {
+                const newUserProfile: Omit<UserProfile, 'id'> & { createdAt: FieldValue, updatedAt: FieldValue } = {
                   displayName: getDisplayName(),
                   profileImageUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
                   currentStreak: 0,
@@ -116,8 +116,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             } catch (err) {
               console.error("Error checking for user profile:", err);
             }
+            setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        } else {
+          // If no user, sign in anonymously
+          signInAnonymously(auth).catch((error) => {
+            console.error("Anonymous sign-in error:", error);
+            setUserAuthState({ user: null, isUserLoading: false, userError: error });
+          });
         }
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);

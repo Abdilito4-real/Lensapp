@@ -31,7 +31,7 @@ export default function ProfilePage() {
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
     // TODO: Replace with firestore data
-    const userWins = (userProfile && userProfile.totalWins > 0) ? (findSubmissionById('win-1') ? [findSubmissionById('win-1')] : []) : [];
+    const userWins = ((userProfile?.totalWins ?? 0) > 0) ? (findSubmissionById('win-1') ? [findSubmissionById('win-1')] : []) : [];
     
     const handleAvatarClick = () => {
         if (isUploading) return;
